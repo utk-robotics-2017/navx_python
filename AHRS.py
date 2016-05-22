@@ -1,6 +1,5 @@
 from enum import Enum
-import serial
-import threading
+from multiprocessing import Process
 from AHRSProtocol import AHRSProtocol
 from ContinuousAngleTracker import ContinuousAngleTracker
 from OffsetTracker import OffsetTracker
@@ -109,6 +108,16 @@ class AHRS:
         self.yaw_angle_tracker = ContinuousAngleTracker()
         self.yaw_offset_tracker = OffsetTracker(AHRS.YAW_HISTORY_LENGTH)
         self.board_capabilities = BoardCapabilities()
+
+        self.io = I2C_IO(self)
+
+
+    def start(self):
+        self.p = Process(target=self.io.run, args=())
+        self.p.start()
+
+    def stop(self):
+        self.io.stop()
 
     '''
         Returns the current pitch value (in degrees, from -180 to 180)
