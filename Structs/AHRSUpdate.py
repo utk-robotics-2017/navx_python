@@ -1,5 +1,5 @@
 class AHRSUpdate:
-    def __init(self):
+    def __init__(self):
         self.yaw = 0.0
         self.pitch = 0.0
         self.roll = 0.0

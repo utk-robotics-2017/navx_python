@@ -1,5 +1,6 @@
 from enum import Enum
 from multiprocessing import Process
+from I2C_IO import I2C_IO
 from AHRSProtocol import AHRSProtocol
 from ContinuousAngleTracker import ContinuousAngleTracker
 from OffsetTracker import OffsetTracker
@@ -30,14 +31,17 @@ class BoardYawAxis:
 
 
 class BoardCapabilities:
-        def isOmniMountSupported(self, capability_flags):
-            return ((capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_OMNIMOUNT) != 0)
+    def __init__(self):
+        pass
 
-        def isBoardYawResetSupported(self, capability_flags):
-            return ((capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_YAW_RESET) != 0)
+    def isOmniMountSupported(self, capability_flags):
+        return ((capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_OMNIMOUNT) != 0)
 
-        def isDisplacementSupported(self, capability_flags):
-            return ((capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_VEL_AND_DISP) != 0)
+    def isBoardYawResetSupported(self, capability_flags):
+        return ((capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_YAW_RESET) != 0)
+
+    def isDisplacementSupported(self, capability_flags):
+        return ((capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_VEL_AND_DISP) != 0)
 
 
 class AHRS:

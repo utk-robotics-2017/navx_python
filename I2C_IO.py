@@ -1,19 +1,22 @@
 import time
 
-import head.Adafruit_GPIO.src.I2C
+import Adafruit_GPIO.I2C as I2C
 
 from Structs.AHRSPosUpdate import AHRSPosUpdate
-from Structs.ARHSUpdate import ARHSUpdate
+from Structs.AHRSUpdate import AHRSUpdate
 from Structs.GyroUpdate import GyroUpdate
 from Structs.BoardID import BoardID
 from Structs.BoardState import BoardState
-from AHRS import BoardCapabilities
+
+from IMURegisters import IMURegisters
+from AHRSProtocol import AHRSProtocol
+
 
 class I2C_IO:
-    def __init__(self, ahrs, busnum=None, i2c_interface=None, **kwargs):
-        self.i2c = get_i2c_device(address, busnum, i2c_interface, **kwargs)
+    def __init__(self, ahrs, update_rate_hz = 4, busnum=None, i2c_interface=None, **kwargs):
+        self.i2c = I2C.get_i2c_device(0x32, busnum, i2c_interface, **kwargs)
 
-        self.update_rate_hz = 0
+        self.update_rate_hz = update_rate_hz
         self.stop = False
 
         self.ahrs = ahrs
@@ -22,6 +25,8 @@ class I2C_IO:
         self.ahrspos_update = AHRSPosUpdate()
         self.board_id = BoardID()
         self.board_state = BoardState()
+
+        from AHRS import BoardCapabilities
         self.board_capabilities = BoardCapabilities()
 
         self.last_update_time = 0.0
@@ -33,10 +38,11 @@ class I2C_IO:
         self.stop = True
 
     def run(self):
-        self.i2c.init()
+        #self.i2c.init()
 
         # Initial Device Configuration
         self.setUpdateRateHz(self.update_rate_hz)
+
         self.getConfiguration()
 
         '''
@@ -60,26 +66,29 @@ class I2C_IO:
         success = False
         retry_count = 0
         while retry_count < 3 and not success:
-            success, config = read(IMURegisters.NAVX_REG_WHOAMI, IMURegisters.NAVX_REG_SENSOR_STATUS_H + 1)
+            config = self.read(IMURegisters.NAVX_REG_WHOAMI, IMURegisters.NAVX_REG_SENSOR_STATUS_H + 1)
+            print config
+            success = len(config) > 0
+
             if success:
                 self.board_id.hw_rev                 = config[IMURegisters.NAVX_REG_HW_REV];
                 self.board_id.fw_ver_major           = config[IMURegisters.NAVX_REG_FW_VER_MAJOR];
                 self.board_id.fw_ver_minor           = config[IMURegisters.NAVX_REG_FW_VER_MINOR];
                 self.board_id.type                   = config[IMURegisters.NAVX_REG_WHOAMI];
-                arhs.setBoardID(board_id);
+                self.ahrs.setBoardID(self.board_id);
 
                 self.board_state.cal_status          = config[IMURegisters.NAVX_REG_CAL_STATUS];
                 self.board_state.op_status           = config[IMURegisters.NAVX_REG_OP_STATUS];
                 self.board_state.selftest_status     = config[IMURegisters.NAVX_REG_SELFTEST_STATUS];
                 self.board_state.sensor_status       = AHRSProtocol.decodeBinaryUint16(config, IMURegisters.NAVX_REG_SENSOR_STATUS_L);
                 self.board_state.gyro_fsr_dps        = AHRSProtocol.decodeBinaryUint16(config, IMURegisters.NAVX_REG_GYRO_FSR_DPS_L);
-                self.board_state.accel_fsr_g         = (short)config[IMURegisters.NAVX_REG_ACCEL_FSR_G];
+                self.board_state.accel_fsr_g         = config[IMURegisters.NAVX_REG_ACCEL_FSR_G];
                 self.board_state.update_rate_hz      = config[IMURegisters.NAVX_REG_UPDATE_RATE_HZ];
                 self.board_state.capability_flags    = AHRSProtocol.decodeBinaryUint16(config, IMURegisters.NAVX_REG_CAPABILITY_FLAGS_L);
-                arhs.setBoardState(board_state);
+                self.ahrs.setBoardState(self.board_state);
             else:
                 time.sleep(0.05)
-            retry_count ++;
+            retry_count += 1;
         return success
 
     def getCurrentData(self):
@@ -154,7 +163,7 @@ class I2C_IO:
             self.board_state.sensor_status    = AHRSProtocol.decodeBinaryUint16(current_data, IMURegisters.NAVX_REG_SENSOR_STATUS_L - first_address)
             self.board_state.update_rate_hz   = current_data[IMURegisters.NAVX_REG_UPDATE_RATE_HZ - first_address]
             self.board_state.gyro_fsr_dps     = AHRSProtocol.decodeBinaryUint16(current_data, IMURegisters.NAVX_REG_GYRO_FSR_DPS_L)
-            self.board_state.accel_fsr_g      = (int)current_data[IMURegisters.NAVX_REG_ACCEL_FSR_G]
+            self.board_state.accel_fsr_g      = current_data[IMURegisters.NAVX_REG_ACCEL_FSR_G]
             self.board_state.capability_flags = AHRSProtocol.decodeBinaryUint16(current_data, IMURegisters.NAVX_REG_CAPABILITY_FLAGS_L - first_address)
             self.ahrs.setBoardState(board_state)
 
@@ -172,7 +181,7 @@ class I2C_IO:
 
             self.last_update_time = time.time();
             byte_count += current_data.length;
-            update_count++;
+            update_count += 1;
 
     def isConnected(self):
         time_since_last_update = time.time() - self.last_update_time;
