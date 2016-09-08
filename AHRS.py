@@ -80,7 +80,7 @@ class AHRS:
         # Configuration/Status
         self.update_rate_hz = self.NAVX_DEFAULT_UPDATE_RATE_HZ
         self.accel_fsr_g = self.DEFAULT_ACCEL_FSR_G
-        self.gyro_fsr_dps = self..DEFAULT_GYRO_FSR_DPS
+        self.gyro_fsr_dps = self.DEFAULT_GYRO_FSR_DPS
         self.capability_flags = 0
         self.op_status = 0
         self.sensor_status = 0
@@ -101,7 +101,7 @@ class AHRS:
         self.yaw_offset_tracker = OffsetTracker(self.YAW_HISTORY_LENGTH)
         self.quaternion_history = TimestampedQuaternionHistory()
 
-        self.io = I2C_IO(self)
+        self.io = I2C_IO(self, self.NAVX_DEFAULT_UPDATE_RATE_HZ)
         self.start()
 
 
@@ -114,8 +114,10 @@ class AHRS:
 
     def free(self):
         self.stop()
-        try:
-            self.p.join(timeout=5)
+        
+        self.p.join(timeout=5)
+        if self.p.is_alive():
+            self.p.terminate()
 
     # calculated properties
     @property

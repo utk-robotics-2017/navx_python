@@ -1,3 +1,5 @@
+import numpy as np
+
 from IMUProtocol import IMUProtocol
 
 
@@ -279,7 +281,8 @@ class AHRSProtocol(IMUProtocol):
 
     @staticmethod
     def decodeBinaryUint16(data, offset):
-        return int.from_bytes(data[offset:offset+2], 'little', signed=False)
+        return np.frombuffer(data, np.uint16, 3, offset)[0]
+        #return int.from_bytes(data[offset:offset+2], 'little', signed=False)
 
     @staticmethod
     def encodeBinaryUint16(i, data, offset):
