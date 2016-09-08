@@ -588,9 +588,9 @@ class AHRS:
         # Update base IMU class variables
 
         self.yaw = ahrs_update.yaw
-        AHRS.this.pitch = ahrs_update.pitch
-        AHRS.this.roll = ahrs_update.roll
-        AHRS.this.compass_heading = ahrs_update.compass_heading
+        self.pitch = ahrs_update.pitch
+        self.roll = ahrs_update.roll
+        self.compass_heading = ahrs_update.compass_heading
         self.yaw_offset_tracker.updateHistory(ahrs_update.yaw)
 
         # Update AHRS class variables

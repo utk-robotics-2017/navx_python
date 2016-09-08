@@ -75,6 +75,8 @@ class I2C_IO:
         while retry_count < 3 and not success:
             config = self.read(IMURegisters.NAVX_REG_WHOAMI, IMURegisters.NAVX_REG_SENSOR_STATUS_H + 1)
             success = len(config) > 0
+            print config
+            print len(config)
 
             if success:
                 self.board_id.hw_rev                 = config[IMURegisters.NAVX_REG_HW_REV];
@@ -112,6 +114,9 @@ class I2C_IO:
         else:
             success = False
 
+        print current_data
+        print len(current_data)
+
         if success:
             timestamp_low = AHRSProtocol.decodeBinaryUint16(current_data, IMURegisters.NAVX_REG_TIMESTAMP_L_L - first_address)
             timestamp_high = AHRSProtocol.decodeBinaryUint16(current_data, IMURegisters.NAVX_REG_TIMESTAMP_H_L - first_address)
@@ -120,6 +125,8 @@ class I2C_IO:
 
             if sensor_timestamp == self.last_sensor_timestamp:
                 return
+
+            print sensor_timestamp
 
             self.last_sensor_timestamp = sensor_timestamp;
             self.ahrspos_update.op_status       = current_data[IMURegisters.NAVX_REG_OP_STATUS - first_address]
