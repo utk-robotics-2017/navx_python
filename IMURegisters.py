@@ -4,26 +4,36 @@ class IMURegisters:
         Device Identification Registers
     '''
 
-    NAVX_REG_WHOAMI = 0x00  # IMU_MODEL_XXX
-    NAVX_REG_HW_REV = 0x01
+    NAVX_REG_WHOAMI =       0x00  # IMU_MODEL_XXX
+    NAVX_REG_HW_REV =       0x01
     NAVX_REG_FW_VER_MAJOR = 0x02
     NAVX_REG_FW_VER_MINOR = 0x03
+
+    # Model types
+    NAVX_MODEL_NAVX_MXP           = 0x32
+
+    @classmethod
+    def model_type(cls, whoami):
+        if whoami == cls.NAVX_MODEL_NAVX_MXP:
+            return "NavX MXP"
+        else:
+            return "unknown"
 
     '''
         Status and Control Registers
     '''
 
     # Read-write
-    NAVX_REG_UPDATE_RATE_HZ = 0x04  # Range:  4 - 50 [unsigned byte]
+    NAVX_REG_UPDATE_RATE_HZ =     0x04  # Range:  4 - 50 [unsigned byte]
     # Read-only
     # Accelerometer Full-Scale Range:  in units of G [unsigned byte]
-    NAVX_REG_ACCEL_FSR_G = 0x05
+    NAVX_REG_ACCEL_FSR_G =        0x05
     # Gyro Full-Scale Range (Degrees/Sec):  Range:  250, 500, 1000 or 2000 [unsigned short]
-    NAVX_REG_GYRO_FSR_DPS_L = 0x06  # Lower 8-bits of Gyro Full-Scale Range
-    NAVX_REG_GYRO_FSR_DPS_H = 0x07  # Upper 8-bits of Gyro Full-Scale Range
-    NAVX_REG_OP_STATUS = 0x08  # NAVX_OP_STATUS_XXX
-    NAVX_REG_CAL_STATUS = 0x09  # NAVX_CAL_STATUS_XXX
-    NAVX_REG_SELFTEST_STATUS = 0x0A  # NAVX_SELFTEST_STATUS_XXX
+    NAVX_REG_GYRO_FSR_DPS_L =     0x06  # Lower 8-bits of Gyro Full-Scale Range
+    NAVX_REG_GYRO_FSR_DPS_H =     0x07  # Upper 8-bits of Gyro Full-Scale Range
+    NAVX_REG_OP_STATUS =          0x08  # NAVX_OP_STATUS_XXX
+    NAVX_REG_CAL_STATUS =         0x09  # NAVX_CAL_STATUS_XXX
+    NAVX_REG_SELFTEST_STATUS =    0x0A  # NAVX_SELFTEST_STATUS_XXX
     NAVX_REG_CAPABILITY_FLAGS_L = 0x0B
     NAVX_REG_CAPABILITY_FLAGS_H = 0x0C
 
@@ -34,29 +44,29 @@ class IMURegisters:
     NAVX_REG_SENSOR_STATUS_L = 0x10  # NAVX_SENSOR_STATUS_XXX
     NAVX_REG_SENSOR_STATUS_H = 0x11
     # Timestamp:  [unsigned long]
-    NAVX_REG_TIMESTAMP_L_L = 0x12
-    NAVX_REG_TIMESTAMP_L_H = 0x13
-    NAVX_REG_TIMESTAMP_H_L = 0x14
-    NAVX_REG_TIMESTAMP_H_H = 0x15
+    NAVX_REG_TIMESTAMP_L_L =   0x12
+    NAVX_REG_TIMESTAMP_L_H =   0x13
+    NAVX_REG_TIMESTAMP_H_L =   0x14
+    NAVX_REG_TIMESTAMP_H_H =   0x15
 
     # Yaw, Pitch, Roll:  Range: -180.00 to 180.00 [signed hundredths]
     # Compass Heading:   Range: 0.00 to 360.00 [unsigned hundredths]
     # Altitude in Meters:  In units of meters [16:16]
 
-    NAVX_REG_YAW_L = 0x16  # Lower 8 bits of Yaw
-    NAVX_REG_YAW_H = 0x17  # Upper 8 bits of Yaw
-    NAVX_REG_ROLL_L = 0x18  # Lower 8 bits of Roll
-    NAVX_REG_ROLL_H = 0x19  # Upper 8 bits of Roll
-    NAVX_REG_PITCH_L = 0x1A  # Lower 8 bits of Pitch
-    NAVX_REG_PITCH_H = 0x1B  # Upper 8 bits of Pitch
-    NAVX_REG_HEADING_L = 0x1C  # Lower 8 bits of Heading
-    NAVX_REG_HEADING_H = 0x1D  # Upper 8 bits of Heading
+    NAVX_REG_YAW_L =           0x16  # Lower 8 bits of Yaw
+    NAVX_REG_YAW_H =           0x17  # Upper 8 bits of Yaw
+    NAVX_REG_ROLL_L =          0x18  # Lower 8 bits of Roll
+    NAVX_REG_ROLL_H =          0x19  # Upper 8 bits of Roll
+    NAVX_REG_PITCH_L =         0x1A  # Lower 8 bits of Pitch
+    NAVX_REG_PITCH_H =         0x1B  # Upper 8 bits of Pitch
+    NAVX_REG_HEADING_L =       0x1C  # Lower 8 bits of Heading
+    NAVX_REG_HEADING_H =       0x1D  # Upper 8 bits of Heading
     NAVX_REG_FUSED_HEADING_L = 0x1E  # Upper 8 bits of Fused Heading
     NAVX_REG_FUSED_HEADING_H = 0x1F  # Upper 8 bits of Fused Heading
-    NAVX_REG_ALTITUDE_I_L = 0x20
-    NAVX_REG_ALTITUDE_I_H = 0x21
-    NAVX_REG_ALTITUDE_D_L = 0x22
-    NAVX_REG_ALTITUDE_D_H = 0x23
+    NAVX_REG_ALTITUDE_I_L =    0x20
+    NAVX_REG_ALTITUDE_I_H =    0x21
+    NAVX_REG_ALTITUDE_D_L =    0x22
+    NAVX_REG_ALTITUDE_D_H =    0x23
 
     # World-frame Linear Acceleration: In units of +/- G * 1000 [signed thousandths]
 
@@ -152,7 +162,7 @@ class IMURegisters:
 
     # Integration Control (Write-Only)
     NAVX_REG_INTEGRATION_CTL = 0x56
-    NAVX_REG_PAD_UNUSED = 0x57
+    NAVX_REG_PAD_UNUSED =      0x57
 
     # Velocity:  Range -32768.9999 - 32767.9999 in units of Meters/Sec
 

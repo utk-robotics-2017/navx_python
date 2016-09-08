@@ -1,4 +1,3 @@
 class IntegrationControl:
-    def __init__(self):
-        self.action = 0
-        self.parameter = 0
+    action = 0
+    parameter = 0

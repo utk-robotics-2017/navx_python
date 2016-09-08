@@ -25,6 +25,7 @@ class ContinuousAngleTracker:
 
         bottom_crossing = False
         delta_angle = newAngle - self.last_angle
+
         # Adjust for wraparound at -180/+180 point
         if (delta_angle >= 180.0):
             delta_angle = 360.0 - delta_angle
@@ -50,8 +51,8 @@ class ContinuousAngleTracker:
         self.last_angle = newAngle
 
     def getAngle(self):
-        accumulated_angle = float(self.zero_crossing_count) * 360.0
-        curr_angle = float(self.last_angle)
+        accumulated_angle = self.zero_crossing_count * 360.0
+        curr_angle = self.last_angle
         if (curr_angle < 0.0):
             curr_angle += 360.0
 
