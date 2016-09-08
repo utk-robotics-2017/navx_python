@@ -32,16 +32,16 @@ class BoardYawAxis:
 
 class BoardCapabilities:
     def __init__(self):
-        pass
+        self.capability_flags = 0
 
-    def isOmniMountSupported(self, capability_flags):
-        return ((capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_OMNIMOUNT) != 0)
+    def isOmniMountSupported(self):
+        return ((self.capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_OMNIMOUNT) != 0)
 
-    def isBoardYawResetSupported(self, capability_flags):
-        return ((capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_YAW_RESET) != 0)
+    def isBoardYawResetSupported(self):
+        return ((self.capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_YAW_RESET) != 0)
 
-    def isDisplacementSupported(self, capability_flags):
-        return ((capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_VEL_AND_DISP) != 0)
+    def isDisplacementSupported(self):
+        return ((self.capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_VEL_AND_DISP) != 0)
 
 
 class AHRS:
@@ -152,7 +152,7 @@ class AHRS:
         :return The current yaw value in degrees (-180 to 180).
     '''
     def getYaw(self):
-        if (self.board_capabilities.isBoardYawResetSupported(self.capability_flags)):
+        if (self.board_capabilities.isBoardYawResetSupported()):
             return self.yaw
         else:
             return float(self.yaw_offset_tracker.applyOffset(self.yaw))
