@@ -43,7 +43,7 @@ class ContinuousAngleTracker:
         if(not bottom_crossing):
             if(delta_angle < 0.0):
                 if ((newAngle < 0.0) and (self.last_angle >= 0.0)):
-                    self.ero_crossing_count -= 1
+                    self.zero_crossing_count -= 1
             elif(delta_angle >= 0.0):
                 if ((newAngle >= 0.0) and (self.last_angle < 0.0)):
                     self.zero_crossing_count += 1

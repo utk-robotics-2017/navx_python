@@ -1,0 +1,8 @@
+getConfig
+attempt 1
+Config Length: 18
+getCurrentData
+Yaw: -48.99
+setAHRSPosData
+AHRS Yaw: -48.99
+-48.99

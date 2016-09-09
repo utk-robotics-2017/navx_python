@@ -1,9 +1,10 @@
 from AHRS import AHRS
-
+import time
 navx = AHRS()
 
-navx.start()
 
 while True:
     #pass
-    print "Yaw: %f, Pitch: %f, Roll: %f" % (navx.getYaw(), navx.getPitch(), navx.getRoll())
+    time.sleep(1)
+    print("Test: {}".format(navx.getYaw()))
+   #print("Yaw: {}, Pitch: {}, Roll: {}".format(navx.getYaw(), navx.getPitch(), navx.getRoll()))

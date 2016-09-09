@@ -4,9 +4,9 @@ from Quaternion import Quaternion
 class TimestampedQuaternion(Quaternion):
     def __init__(self, src=None, timestamp=None):
         if not src is None:
-            Quaternion.__init__(self, src.w, src.x, src.y, src.z)
+            Quaternion.__init__(src.w, src.x, src.y, src.z)
         else:
-            Quaternion.__init__(self)
+            Quaternion.__init__()
         self.timestamp = timestamp
         self.valid = True
         self.interpolated = False

@@ -7,7 +7,7 @@ class TimestampedQuaternionHistory:
         self.history = {}
 
     def add(self, w, x, y, z, new_timestamp):
-        self.history[new_timestamp] = TimestampedQuaternion(Quaternion(w, x, y, z), new_timestamp)
+        self.history[new_timestamp] = TimestampedQuaternion(w, x, y, z, new_timestamp)
 
     def get(self, requested_timestamp):
         if len(self.history) == 0:
@@ -18,7 +18,7 @@ class TimestampedQuaternionHistory:
             return TimestampedQuaternion(match.w, match.x, match.y, match.z, requested_timestamp)
         else:
 
-            keys = list(self.history.keys())
+            keys = self.history.keys()
             keys.sort()
 
             if keys[0] > requested_timestamp or keys[-1] < requested_timestamp:

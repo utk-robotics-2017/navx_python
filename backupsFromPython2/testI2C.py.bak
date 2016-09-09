@@ -7,4 +7,4 @@ address = 0x32
 
 
 while True:
-    print(bus.read_byte_data(address, 0x16))
+    print bus.read_byte_data(address, 0x16)

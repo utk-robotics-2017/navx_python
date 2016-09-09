@@ -1,5 +1,5 @@
 from enum import Enum
-from multiprocessing import Process, Lock
+from multiprocessing import Process
 from I2C_IO import I2C_IO
 from AHRSProtocol import AHRSProtocol
 from ContinuousAngleTracker import ContinuousAngleTracker
@@ -106,7 +106,6 @@ class AHRS:
 
 
     def start(self):
-        self.lock = Lock()
         self.p = Process(target=self.io.run, args=())
         self.p.start()
 
@@ -175,13 +174,10 @@ class AHRS:
 
             :return The current yaw value in degrees (-180 to 180).
         '''
-        print("getYaw: {}".format(self.yaw))
-        if (self._isBoardYawResetSupported()):
-            print(1)
+        if (self.board_capabilities.isBoardYawResetSupported()):
             return self.yaw
         else:
-            yaw = self.yaw_offset_tracker.applyOffset(self.yaw)
-            return yaw
+            return self.yaw_offset_tracker.applyOffset(self.yaw)
 
     def getCompassHeading(self):
         '''
@@ -209,7 +205,7 @@ class AHRS:
             subtracted from subsequent yaw values reported by
             the getYaw() method.
         '''
-        if (self._isBoardYawResetSupported()):
+        if (self.board_capabilities.isBoardYawResetSupported()):
             self.io.zeroYaw()
             pass
         else:
@@ -508,7 +504,7 @@ class AHRS:
             Zeros the displacement integration variables.   Invoke this at the moment when
             integration begins.
         '''
-        if (self._isDisplacementSupported()):
+        if (self.board_capabilities.isDisplacementSupported()):
             self.io.zeroDisplacement()
         else:
             self.integrator.resetDisplacement()
@@ -534,7 +530,7 @@ class AHRS:
             resulting velocities are not known to be very accurate.
             :return Current Velocity (in meters/squared).
         '''
-        if self._isDisplacementSupported():
+        if self.board_capabilities.isDisplacementSupported():
             return self.vel_x
         else:
             return self.integrator.getVelocityX()
@@ -549,7 +545,7 @@ class AHRS:
             resulting velocities are not known to be very accurate.
             :return Current Velocity (in meters/squared).
         '''
-        if self._isDisplacementSupported():
+        if self.board_capabilities.isDisplacementSupported():
             return self.vel_y
         else:
             return self.integrator.getVelocityY()
@@ -563,7 +559,7 @@ class AHRS:
             resulting velocities are not known to be very accurate.
             :return Current Velocity (in meters/squared).
         '''
-        if self._isDisplacementSupported():
+        if self.board_capabilities.isDisplacementSupported():
             return self.vel_z
         else:
             return self.integrator.getVelocityZ()
@@ -579,7 +575,7 @@ class AHRS:
             increases quickly as time progresses.
             :return Displacement since last reset (in meters).
         '''
-        if self._isDisplacementSupported():
+        if self.board_capabilities.isDisplacementSupported():
             return self.disp_x
         else:
             return self.integrator.getDisplacementX()
@@ -595,7 +591,7 @@ class AHRS:
             increases quickly as time progresses.
             :return Displacement since last reset (in meters).
         '''
-        if self._isDisplacementSupported():
+        if self.board_capabilities.isDisplacementSupported():
             return self.disp_y
         else:
             return self.integrator.getDisplacementY()
@@ -611,7 +607,7 @@ class AHRS:
             increases quickly as time progresses.
             :return Displacement since last reset (in meters).
         '''
-        if self._isDisplacementSupported():
+        if self.board_capabilities.isDisplacementSupported():
             return self.disp_z
         else:
             return self.integrator.getDisplacementZ()
@@ -710,45 +706,32 @@ class AHRS:
         return ((self.capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_AHRSPOS_TS) != 0)
 
     def _setYawPitchRoll(self, o):
-        self.lock.acquire()
         self.__dict__.update(o.__dict__)
-        self.lock.release()
 
     def _setAHRSPosData(self, o):
-        print("setAHRSPosData")
-        self.lock.acquire()
         self.__dict__.update(o.__dict__)
-        print("AHRS Yaw: {}".format(self.yaw))
+
         if not self.quaternion_history is None:
             self.quaternion_history.add(self.quaternionW, self.quaternionX, self.quaternionY, self.quaternionZ, self.last_sensor_timestamp)
 
-        print(str(self.yaw))
         self.yaw_offset_tracker.updateHistory(self.yaw)
         self.yaw_angle_tracker.nextAngle(self.getYaw())
-        self.lock.release()
 
     def _setRawData(self, o):
-        self.lock.acquire()
         self.__dict__.update(o.__dict__)
-        self.lock.release()
 
     def _setAHRSData(self, o):
-        self.lock.acquire()
         self.__dict__.update(o.__dict__)
+
         if not self.quaternion_history is None:
             self.quaternion_history.add(self.quaternionW, self.quaternionX, self.quaternionY, self.quaternionZ, self.last_sensor_timestamp)
 
         self.yaw_offset_tracker.updateHistory(self.yaw)
         self._updateDisplacement(o.world_linear_accel_x, o.world_linear_accel_y, self.update_rate_hz, self.is_moving)
         self.yaw_angle_tracker.nextAngle(self.getYaw())
-        self.lock.acquire()
 
     def _setBoardID(self, o):
-        self.lock.acquire()
         self.__dict__.update(o.__dict__)
-        self.lock.release()
 
     def _setBoardState(self, o):
-        self.lock.acquire()
         self.__dict__.update(o.__dict__)
-        self.lock.release()

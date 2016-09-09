@@ -5,7 +5,7 @@ class OffsetTracker:
         self.value_history = deque([0]*history_length, maxlen=history_length)
         self.value_offset = 0
 
-    def updateHistory(self, curr_value):
+    def updateHistory(self, value):
         self.value_history.append(value)
 
     def getAverageFromHistory(self):
