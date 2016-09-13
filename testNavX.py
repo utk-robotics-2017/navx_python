@@ -1,9 +1,9 @@
-from AHRS import get_navx
+from NavX import get_navx
 import time
 
 with get_navx(10) as navx:
     time.sleep(1)
-    
+
     while True:
         #pass
         time.sleep(1)
