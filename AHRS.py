@@ -1,11 +1,29 @@
 from enum import Enum
-from multiprocessing import Process, Lock
+from threading import Thread, Lock
 from I2C_IO import I2C_IO
 from AHRSProtocol import AHRSProtocol
 from ContinuousAngleTracker import ContinuousAngleTracker
 from OffsetTracker import OffsetTracker
 from InertialDataIntegrator import InertialDataIntegrator
 from TimestampedQuaternionHistory import TimestampedQuaternionHistory
+
+class get_navx:
+    '''
+        Controlled environment for reading from the NavX.
+    '''
+    def __init__(self, update_rate_hz=None):
+        self.update_rate_hz = update_rate_hz
+
+    def __enter__(self):
+        if self.update_rate_hz is None:
+            self.navx = AHRS()
+        else:
+            self.navx = AHRS(self.update_rate_hz)
+        return self.navx
+
+    def __exit__(self, type, value, traceback):
+        self.navx.free()
+
 
 class AHRS:
     '''
@@ -34,7 +52,7 @@ class AHRS:
     DEFAULT_GYRO_FSR_DPS        = 2000
     QUATERNION_HISTORY_SECONDS  = 5.0
 
-    def __init__(self):
+    def __init__(self, update_rate_hz=NAVX_DEFAULT_UPDATE_RATE_HZ):
         # Processed Data
         self.yaw = 0.0
         self.pitch = 0.0
@@ -78,7 +96,7 @@ class AHRS:
         self.cal_mag_z = 0
 
         # Configuration/Status
-        self.update_rate_hz = self.NAVX_DEFAULT_UPDATE_RATE_HZ
+        self.update_rate_hz = update_rate_hz
         self.accel_fsr_g = self.DEFAULT_ACCEL_FSR_G
         self.gyro_fsr_dps = self.DEFAULT_GYRO_FSR_DPS
         self.capability_flags = 0
@@ -101,14 +119,14 @@ class AHRS:
         self.yaw_offset_tracker = OffsetTracker(self.YAW_HISTORY_LENGTH)
         self.quaternion_history = TimestampedQuaternionHistory()
 
-        self.io = I2C_IO(self, self.NAVX_DEFAULT_UPDATE_RATE_HZ)
+        self.lock = Lock()
+        self.io = I2C_IO(self, self.update_rate_hz)
         self.start()
 
 
     def start(self):
-        self.lock = Lock()
-        self.p = Process(target=self.io.run, args=())
-        self.p.start()
+        self.t = Thread(target=self.io.run, name="NavX")
+        self.t.start()
 
     def stop(self):
         self.io.stop()
@@ -116,10 +134,10 @@ class AHRS:
     def free(self):
         self.stop()
         
-        self.p.join(timeout=5)
-        if self.p.is_alive():
-            self.p.terminate()
-
+        self.t.join(timeout=5)
+        if self.t.is_alive():
+            self.t.terminate()
+    
     # calculated properties
     @property
     def is_moving(self):
@@ -175,9 +193,7 @@ class AHRS:
 
             :return The current yaw value in degrees (-180 to 180).
         '''
-        print("getYaw: {}".format(self.yaw))
         if (self._isBoardYawResetSupported()):
-            print(1)
             return self.yaw
         else:
             yaw = self.yaw_offset_tracker.applyOffset(self.yaw)
@@ -715,14 +731,11 @@ class AHRS:
         self.lock.release()
 
     def _setAHRSPosData(self, o):
-        print("setAHRSPosData")
         self.lock.acquire()
         self.__dict__.update(o.__dict__)
-        print("AHRS Yaw: {}".format(self.yaw))
         if not self.quaternion_history is None:
             self.quaternion_history.add(self.quaternionW, self.quaternionX, self.quaternionY, self.quaternionZ, self.last_sensor_timestamp)
 
-        print(str(self.yaw))
         self.yaw_offset_tracker.updateHistory(self.yaw)
         self.yaw_angle_tracker.nextAngle(self.getYaw())
         self.lock.release()

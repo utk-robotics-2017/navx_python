@@ -25,7 +25,7 @@ class I2C_IO:
         self.i2c = I2C.get_i2c_device(0x32, busnum, i2c_interface, **kwargs)
 
         self.update_rate_hz = update_rate_hz
-        self.stop = False
+        self.running = True
 
         self.ahrs = ahrs
         self.raw_data_update = GyroUpdate()
@@ -39,11 +39,14 @@ class I2C_IO:
         self.update_count = 0
 
     def stop(self):
-        self.stop = True
+        self.running = False
+
+    def isRunning(self):
+        return self.running
 
     def run(self):
         # Initial Device Configuration
-        # self.setUpdateRateHz(self.update_rate_hz)
+        self.setUpdateRateHz(self.update_rate_hz)
         if not self.getConfiguration():
             logger.warn("-- Did not get configuration data")
         else:
@@ -65,7 +68,7 @@ class I2C_IO:
         log_error = True
 
         # IO Loop
-        while not self.stop:
+        while self.running:
             #if not self.board_state.update_rate_hz == self.update_rate_hz:
             #    self.setUpdateRateHz(self.update_rate_hz)
 
@@ -83,10 +86,7 @@ class I2C_IO:
         success = False
         retry_count = 0
         
-        print("getConfig")
-
         while retry_count < 5 and not success:
-            print("attempt {}".format(retry_count + 1))
             try:
                 config = self.read(IMURegisters.NAVX_REG_WHOAMI, IMURegisters.NAVX_REG_SENSOR_STATUS_H + 1)
             except IOError as e:
@@ -94,7 +94,6 @@ class I2C_IO:
                 success = False
                 time.delay(0.5)
             else:
-                print("Config Length: {}".format(len(config)))
                 board_id = self.board_id
                 board_id.hw_rev                 = config[IMURegisters.NAVX_REG_HW_REV]
                 board_id.fw_ver_major           = config[IMURegisters.NAVX_REG_FW_VER_MAJOR]
@@ -120,7 +119,6 @@ class I2C_IO:
 
     def getCurrentData(self):
         
-        print("getCurrentData")
         first_address = IMURegisters.NAVX_REG_UPDATE_RATE_HZ
         displacement_registers = self.ahrs._isDisplacementSupported()
 
@@ -139,7 +137,6 @@ class I2C_IO:
         ahrspos_update.cal_status      = current_data[IMURegisters.NAVX_REG_CAL_STATUS]
         ahrspos_update.sensor_status   = current_data[IMURegisters.NAVX_REG_SENSOR_STATUS_L - first_address]
         ahrspos_update.yaw             = AHRSProtocol.decodeProtocolSignedHundredthsFloat(current_data, IMURegisters.NAVX_REG_YAW_L-first_address)
-        print("Yaw: {}".format(ahrspos_update.yaw))
         ahrspos_update.pitch           = AHRSProtocol.decodeProtocolSignedHundredthsFloat(current_data, IMURegisters.NAVX_REG_PITCH_L-first_address)
         ahrspos_update.roll            = AHRSProtocol.decodeProtocolSignedHundredthsFloat(current_data, IMURegisters.NAVX_REG_ROLL_L-first_address)
         ahrspos_update.compass_heading = AHRSProtocol.decodeProtocolUnsignedHundredthsFloat(current_data, IMURegisters.NAVX_REG_HEADING_L-first_address)
