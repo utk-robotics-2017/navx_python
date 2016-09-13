@@ -6,7 +6,7 @@ from ContinuousAngleTracker import ContinuousAngleTracker
 from OffsetTracker import OffsetTracker
 from InertialDataIntegrator import InertialDataIntegrator
 from TimestampedQuaternionHistory import TimestampedQuaternionHistory
-from NavX import ProcessCommands
+from ProcessCommands import ProcessCommands
 
 import logging
 from ourlogging import setup_logging
@@ -149,75 +149,75 @@ class AHRS:
         self.running = True
 
         while self.running:
-            cmd = self.child_conn.recv()
+            cmd = child_conn.recv()
             if cmd == ProcessCommands.YAW:
-                self.child_conn.send(self.getYaw())
+                child_conn.send(self.getYaw())
             elif cmd == ProcessCommands.PITCH:
-                self.child_conn.send(self.getPitch())
+                child_conn.send(self.getPitch())
             elif cmd == ProcessCommands.ROLL:
-                self.child_conn.send(self.getRoll())
+                child_conn.send(self.getRoll())
             elif cmd == ProcessCommands.COMPASS_HEADING:
-                self.child_conn.send(self.getCompassHeading())
+                child_conn.send(self.getCompassHeading())
             elif cmd == ProcessCommands.ZERO_YAW:
-                self.child_conn.send("ok")
+                child_conn.send("ok")
             elif cmd == ProcessCommands.IS_CALIBRATING:
-                self.child_conn.send(self.isCalibrating())
+                child_conn.send(self.isCalibrating())
             elif cmd == ProcessCommands.IS_CONNECTED:
-                self.child_conn.send(self.isConnected())
+                child_conn.send(self.isConnected())
             elif cmd == ProcessCommands.BYTE_COUNT:
-                self.child_conn.send(self.getByteCount())
+                child_conn.send(self.getByteCount())
             elif cmd == ProcessCommands.UPDATE_COUNT:
-                self.child_conn.send(self.getUpdateCount())
+                child_conn.send(self.getUpdateCount())
             elif cmd == ProcessCommands.WORLD_LINEAR_ACCEL_X:
-                self.child_conn.send(self.getWorldLinearAccelX())
+                child_conn.send(self.getWorldLinearAccelX())
             elif cmd == ProcessCommands.WORLD_LINEAR_ACCEL_Y:
-                self.child_conn.send(self.getWorldLinearAccelY())
+                child_conn.send(self.getWorldLinearAccelY())
             elif cmd == ProcessCommands.WORLD_LINEAR_ACCEL_Z:
-                self.child_conn.send(self.getWorldLinearAccelZ())
+                child_conn.send(self.getWorldLinearAccelZ())
             elif cmd == ProcessCommands.BAROMETRIC_PRESSUE:
-                self.child_conn.send(self.getBarometricPressure())
+                child_conn.send(self.getBarometricPressure())
             elif cmd == ProcessCommands.ALTITUDE:
-                self.child_conn.send(self.getAltitude())
+                child_conn.send(self.getAltitude())
             elif cmd == ProcessCommands.FUSED_HEADING:
-                self.child_conn.send(self.getFusedHeading())
+                child_conn.send(self.getFusedHeading())
             elif cmd == ProcessCommands.QUATERNION_W:
-                self.child_conn.send(self.getQuaternionW())
+                child_conn.send(self.getQuaternionW())
             elif cmd == ProcessCommands.QUATERNION_X:
-                self.child_conn.send(self.getQuaternionX())
+                child_conn.send(self.getQuaternionX())
             elif cmd == ProcessCommands.QUATERNION_Y:
-                self.child_conn.send(self.getQuaternionY())
+                child_conn.send(self.getQuaternionY())
             elif cmd == ProcessCommands.QUATERNION_Z:
-                self.child_conn.send(self.getQuaternionZ())
+                child_conn.send(self.getQuaternionZ())
             elif cmd == ProcessCommands.RESET_DISPLACEMENT:
                 self.resetDisplacement()
-                self.child_conn.send("ok")
+                child_conn.send("ok")
             elif cmd == ProcessCommands.VELOCITY_X:
-                self.child_conn.send(self.getVelocityX())
+                child_conn.send(self.getVelocityX())
             elif cmd == ProcessCommands.VELOCITY_Y:
-                self.child_conn.send(self.getVelocityY())
+                child_conn.send(self.getVelocityY())
             elif cmd == ProcessCommands.VELOCITY_Z:
-                self.child_conn.send(self.getVelocityZ())
+                child_conn.send(self.getVelocityZ())
             elif cmd == ProcessCommands.DISPLACEMENT_X:
-                self.child_conn.send(self.getDisplacementX())
+                child_conn.send(self.getDisplacementX())
             elif cmd == ProcessCommands.DISPLACEMENT_Y:
-                self.child_conn.send(self.getDisplacementY())
+                child_conn.send(self.getDisplacementY())
             elif cmd == ProcessCommands.DISPLACEMENT_Z:
-                self.child_conn.send(self.getDisplacementZ())
+                child_conn.send(self.getDisplacementZ())
             elif cmd == ProcessCommands.TEMP_C:
-                self.child_conn.send(self.getTempC())
+                child_conn.send(self.getTempC())
             elif cmd == ProcessCommands.IS_MOVING:
-                self.child_conn.send(self.isMoving())
+                child_conn.send(self.isMoving())
             elif cmd == ProcessCommands.IS_ROTATING:
-                self.child_conn.send(self.isRotating())
+                child_conn.send(self.isRotating())
             elif cmd == ProcessCommands.ALTITUDE_VALID:
-                self.child_conn.send(self.isAltitudeValid())
+                child_conn.send(self.isAltitudeValid())
             elif cmd == ProcessCommands.IS_MAGNETOMETER_CALIBRATED:
-                self.child_conn.send(self.isMagnetometerCalibrated())
+                child_conn.send(self.isMagnetometerCalibrated())
             elif cmd == ProcessCommands.MAGNETIC_DISTURBANCE:
-                self.child_conn.send(self.isMagneticDisturbance())
+                child_conn.send(self.isMagneticDisturbance())
             else:
                 logger.warn("Unknown Command: {}".format(cmd))
-                self.child_conn.send("Unknown Command")
+                child_conn.send("Unknown Command")
 
 
     # calculated properties
