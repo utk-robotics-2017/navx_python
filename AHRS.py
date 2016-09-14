@@ -8,6 +8,8 @@ from InertialDataIntegrator import InertialDataIntegrator
 from TimestampedQuaternionHistory import TimestampedQuaternionHistory
 from ProcessCommands import ProcessCommands
 
+import time
+
 import logging
 from ourlogging import setup_logging
 setup_logging(__file__)
@@ -149,7 +151,11 @@ class AHRS:
         self.running = True
 
         while self.running:
-            cmd = child_conn.recv()
+            if child_conn.poll():
+                cmd = child_conn.recv()
+            else:
+                time.sleep(.01)
+                continue
             if cmd == ProcessCommands.TIME:
                 child_conn.send(self.getLastTimeStamp())
             elif cmd == ProcessCommands.YAW:
@@ -161,6 +167,7 @@ class AHRS:
             elif cmd == ProcessCommands.COMPASS_HEADING:
                 child_conn.send(self.getCompassHeading())
             elif cmd == ProcessCommands.ZERO_YAW:
+                self.zeroYaw()
                 child_conn.send("ok")
             elif cmd == ProcessCommands.IS_CALIBRATING:
                 child_conn.send(self.isCalibrating())

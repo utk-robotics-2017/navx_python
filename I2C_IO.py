@@ -34,6 +34,8 @@ class I2C_IO:
         self.board_id = BoardID()
         self.board_state = BoardState()
 
+        self.last_sensor_timestamp = 0
+
         self.last_update_time = 0.0
         self.byte_count = 0
         self.update_count = 0
@@ -132,7 +134,7 @@ class I2C_IO:
         current_data = self.read(first_address, read_count)
 
         timestamp_low = AHRSProtocol.decodeBinaryUint16(current_data, IMURegisters.NAVX_REG_TIMESTAMP_L_L-first_address)
-        timestamp_high = AHRSProtocol.decodeBinaryUint16(curr_data, IMURegisters.NAVX_REG_TIMESTAMP_H_L-first_address)
+        timestamp_high = AHRSProtocol.decodeBinaryUint16(current_data, IMURegisters.NAVX_REG_TIMESTAMP_H_L-first_address)
         sensor_timestamp = (timestamp_high << 16) + timestamp_low
 
         if sensor_timestamp == self.last_sensor_timestamp:

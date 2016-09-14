@@ -8,4 +8,4 @@ with get_navx(10) as navx:
         #pass
         time.sleep(1)
         #print("Test: {}".format(navx.getYaw()))
-        print("Yaw: {}, Pitch: {}, Roll: {}".format(navx.getYaw(), navx.getPitch(), navx.getRoll()))
+        print("Time: {}, Yaw: {}, Pitch: {}, Roll: {}".format(navx.getLastTimeStamp(), navx.getYaw(), navx.getPitch(), navx.getRoll()))
