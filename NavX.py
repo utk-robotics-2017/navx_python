@@ -626,3 +626,10 @@ class NavX:
         response = self.parent_conn.recv()
         self.lock.release()
         return response
+
+if __name__ == "__main__":
+    with get_navx(10) as navx:
+        time.sleep(1)
+        while True:
+            time.sleep(1)
+            print("Time: {}, Yaw: {}, Pitch: {}, Roll: {}".format(navx.getLastTimeStamp(), navx.getYaw(), navx.getPitch(), navx.getRoll()))

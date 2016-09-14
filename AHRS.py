@@ -865,3 +865,10 @@ class AHRS:
         self.lock.acquire()
         self.__dict__.update(o.__dict__)
         self.lock.release()
+
+if __name__ == "__main__":
+    with get_ahrs(10) as navx:
+        time.sleep(1)
+        while True:
+            time.sleep(1)
+            print("Time: {}, Yaw: {}, Pitch: {}, Roll: {}".format(navx.getLastTimeStamp(), navx.getYaw(), navx.getPitch(), navx.getRoll()))
