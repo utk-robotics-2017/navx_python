@@ -28,7 +28,10 @@ class get_navx:
 
 class NavX:
     def __init__(self, update_rate_hz=None):
-        self.ahrs = AHRS(update_rate_hz)
+        if update_rate_hz is None:
+            self.ahrs = AHRS()
+        else:
+            self.ahrs = AHRS(update_rate_hz)
         self.start()
 
     def start(self):
