@@ -69,8 +69,8 @@ class I2C_IO:
 
         # IO Loop
         while self.running:
-            #if not self.board_state.update_rate_hz == self.update_rate_hz:
-            #    self.setUpdateRateHz(self.update_rate_hz)
+            if not self.board_state.update_rate_hz == self.update_rate_hz:
+                self.setUpdateRateHz(self.update_rate_hz)
 
             try:
                 self.getCurrentData()
@@ -85,7 +85,7 @@ class I2C_IO:
     def getConfiguration(self):
         success = False
         retry_count = 0
-        
+
         while retry_count < 5 and not success:
             try:
                 config = self.read(IMURegisters.NAVX_REG_WHOAMI, IMURegisters.NAVX_REG_SENSOR_STATUS_H + 1)
@@ -118,7 +118,7 @@ class I2C_IO:
         return success
 
     def getCurrentData(self):
-        
+
         first_address = IMURegisters.NAVX_REG_UPDATE_RATE_HZ
         displacement_registers = self.ahrs._isDisplacementSupported()
 
@@ -130,6 +130,14 @@ class I2C_IO:
             read_count = IMURegisters.NAVX_REG_QUAT_OFFSET_Z_H + 1 - first_address
 
         current_data = self.read(first_address, read_count)
+
+        timestamp_low = AHRSProtocol.decodeBinaryUint16(current_data, IMURegisters.NAVX_REG_TIMESTAMP_L_L-first_address)
+        timestamp_high = AHRSProtocol.decodeBinaryUint16(curr_data, IMURegisters.NAVX_REG_TIMESTAMP_H_L-first_address)
+        sensor_timestamp = (timestamp_high << 16) + timestamp_low
+
+        if sensor_timestamp == self.last_sensor_timestamp:
+            	return;
+        self.last_sensor_timestamp = sensor_timestamp
 
         ahrspos_update = self.ahrspos_update
         ahrspos_update.op_status       = current_data[IMURegisters.NAVX_REG_OP_STATUS - first_address]
@@ -159,9 +167,9 @@ class I2C_IO:
             ahrspos_update.disp_y      = AHRSProtocol.decodeProtocol1616Float(current_data, IMURegisters.NAVX_REG_DISP_Y_I_L-first_address)
             ahrspos_update.disp_z      = AHRSProtocol.decodeProtocol1616Float(current_data, IMURegisters.NAVX_REG_DISP_Z_I_L-first_address)
 
-            self.ahrs._setAHRSPosData(ahrspos_update)
+            self.ahrs._setAHRSPosData(ahrspos_update, sensor_timestamp)
         else:
-            self.ahrs._setAHRSData(ahrspos_update)
+            self.ahrs._setAHRSData(ahrspos_update, sensor_timestamp)
 
         board_state = self.board_state
         board_state.cal_status      = current_data[IMURegisters.NAVX_REG_CAL_STATUS-first_address]
@@ -185,7 +193,7 @@ class I2C_IO:
         raw_data_update.cal_mag_y       = AHRSProtocol.decodeBinaryInt16(current_data,  IMURegisters.NAVX_REG_MAG_Y_L-first_address)
         raw_data_update.cal_mag_z       = AHRSProtocol.decodeBinaryInt16(current_data,  IMURegisters.NAVX_REG_MAG_Z_L-first_address)
         raw_data_update.mpu_temp_c      = ahrspos_update.mpu_temp
-        self.ahrs._setRawData(raw_data_update)
+        self.ahrs._setRawData(raw_data_update, sensor_timestamp)
 
         self.last_update_time = time.time()
         self.byte_count += len(current_data)

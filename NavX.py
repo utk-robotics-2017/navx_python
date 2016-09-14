@@ -50,6 +50,18 @@ class NavX:
         if self.p.is_alive():
             self.p.terminate()
 
+    def getLastTimeStamp(self):
+        '''
+            Returns the last time stamp reported by the sensor.
+
+            :return The last time stamp reported by the sensor
+        '''
+        self.lock.acquire()
+        self.parent_conn.send(ProcessCommands.TIME)
+        response = self.parent_conn.recv()
+        self.lock.release()
+        return response
+
     def getPitch(self):
         '''
             Returns the current pitch value (in degrees, from -180 to 180)

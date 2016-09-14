@@ -150,7 +150,9 @@ class AHRS:
 
         while self.running:
             cmd = child_conn.recv()
-            if cmd == ProcessCommands.YAW:
+            if cmd == ProcessCommands.TIME:
+                child_conn.send(self.getLastTimeStamp())
+            elif cmd == ProcessCommands.YAW:
                 child_conn.send(self.getYaw())
             elif cmd == ProcessCommands.PITCH:
                 child_conn.send(self.getPitch())
@@ -241,6 +243,13 @@ class AHRS:
     def magnetic_disturbance(self):
         return (self.sensor_status & AHRSProtocol.NAVX_SENSOR_STATUS_MAG_DISTURBANCE) != 0
 
+    def getLastTimeStamp(self):
+        '''
+            Returns the last time stamp reported by the sensor
+
+            :return The last time stamp
+        '''
+        return self.last_sensor_timestamp
 
     def getPitch(self):
         '''
@@ -811,9 +820,10 @@ class AHRS:
         self.__dict__.update(o.__dict__)
         self.lock.release()
 
-    def _setAHRSPosData(self, o):
+    def _setAHRSPosData(self, o, ts):
         self.lock.acquire()
         self.__dict__.update(o.__dict__)
+        self.last_sensor_timestamp = ts
         if not self.quaternion_history is None:
             self.quaternion_history.add(self.quaternionW, self.quaternionX, self.quaternionY, self.quaternionZ, self.last_sensor_timestamp)
 
@@ -821,14 +831,16 @@ class AHRS:
         self.yaw_angle_tracker.nextAngle(self.getYaw())
         self.lock.release()
 
-    def _setRawData(self, o):
+    def _setRawData(self, o, ts):
         self.lock.acquire()
         self.__dict__.update(o.__dict__)
+        self.last_sensor_timestamp = ts
         self.lock.release()
 
-    def _setAHRSData(self, o):
+    def _setAHRSData(self, o, ts):
         self.lock.acquire()
         self.__dict__.update(o.__dict__)
+        self.last_sensor_timestamp = ts
         if not self.quaternion_history is None:
             self.quaternion_history.add(self.quaternionW, self.quaternionX, self.quaternionY, self.quaternionZ, self.last_sensor_timestamp)
 

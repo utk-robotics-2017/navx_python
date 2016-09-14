@@ -5,6 +5,7 @@ class ProcessCommands:
     IS_MAGNETOMETER_CALIBRATED = 'imc'
     MAGNETIC_DISTURBANCE = 'md'
 
+    TIME = 't'
     YAW = 'y'
     PITCH = 'p'
     ROLL = 'r'
