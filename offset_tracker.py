@@ -1,5 +1,6 @@
 from collections import deque
 
+
 class OffsetTracker:
     def __init__(self, history_length):
         self.value_history = deque([0]*history_length, maxlen=history_length)

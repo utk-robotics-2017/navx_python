@@ -1,7 +1,8 @@
 from multiprocessing import Process, Pipe, Lock
+import time
 
-from AHRS import AHRS
-from ProcessCommands import ProcessCommands
+from ahrs import AHRS
+from process_commands import ProcessCommands
 
 import logging
 from ourlogging import setup_logging
@@ -26,6 +27,7 @@ class get_navx:
     def __exit__(self, type, value, traceback):
         self.navx.free()
 
+
 class NavX:
     def __init__(self, update_rate_hz=None):
         if update_rate_hz is None:
@@ -41,10 +43,10 @@ class NavX:
         self.p.start()
 
     def stop(self):
-        self.ahrs.stop()
+        self.parent_conn.send(ProcessCommands.STOP)
 
     def free(self):
-        self.stop()
+        self.parent_conn.send(ProcessCommands.FREE)
 
         self.p.join(timeout=5)
         if self.p.is_alive():
@@ -314,7 +316,6 @@ class NavX:
         self.lock.release()
         return response
 
-
     def getAltitude(self):
         '''
             Returns the current altitude, based upon calibrated readings
@@ -334,7 +335,6 @@ class NavX:
         self.lock.release()
         return response
 
-
     def isAltitudeValid(self):
         '''
             Indicates whether the current altitude (and barometric pressure) data is
@@ -351,7 +351,6 @@ class NavX:
         response = self.parent_conn.recv()
         self.lock.release()
         return response
-
 
     def getFusedHeading(self):
         '''
@@ -376,7 +375,6 @@ class NavX:
         self.lock.release()
         return response
 
-
     def isMagneticDisturbance(self):
         '''
             Indicates whether the current magnetic field strength diverges from the
@@ -393,7 +391,6 @@ class NavX:
         response = self.parent_conn.recv()
         self.lock.release()
         return response
-
 
     def isMagnetometerCalibrated(self):
         '''
@@ -415,7 +412,6 @@ class NavX:
 
     # Unit Quaternions
 
-
     def getQuaternionW(self):
         '''
             Returns the imaginary portion (W) of the Orientation Quaternion which
@@ -426,7 +422,8 @@ class NavX:
             to 2.  This total range (4) can be associated with a unit circle, since
             each circle is comprised of 4 PI Radians.
 
-            For more information on Quaternions and their use, please see this <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>definition</a>.
+            For more information on Quaternions and their use, please see this
+            <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>definition</a>.
             :return Returns the imaginary portion (W) of the quaternion.
         '''
         self.lock.acquire()
@@ -434,7 +431,6 @@ class NavX:
         response = self.parent_conn.recv()
         self.lock.release()
         return response
-
 
     def getQuaternionX(self):
         '''
@@ -446,7 +442,8 @@ class NavX:
             to 2.  This total range (4) can be associated with a unit circle, since
             each circle is comprised of 4 PI Radians.
 
-            For more information on Quaternions and their use, please see this <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>description</a>.
+            For more information on Quaternions and their use, please see this
+            <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>description</a>.
             :return Returns the real portion (X) of the quaternion.
         '''
         self.lock.acquire()
@@ -454,7 +451,6 @@ class NavX:
         response = self.parent_conn.recv()
         self.lock.release()
         return response
-
 
     def getQuaternionY(self):
         '''
@@ -478,7 +474,6 @@ class NavX:
         self.lock.release()
         return response
 
-
     def getQuaternionZ(self):
         '''
             Returns the real portion (X axis) of the Orientation Quaternion which
@@ -501,7 +496,6 @@ class NavX:
         self.lock.release()
         return response
 
-
     def resetDisplacement(self):
         '''
             Zeros the displacement integration variables.   Invoke this at the moment when
@@ -512,7 +506,6 @@ class NavX:
         response = self.parent_conn.recv()
         self.lock.release()
         assert response == "ok"
-
 
     def getVelocityX(self):
         '''
@@ -528,7 +521,6 @@ class NavX:
         response = self.parent_conn.recv()
         self.lock.release()
         return response
-
 
     def getVelocityY(self):
         '''
@@ -632,4 +624,6 @@ if __name__ == "__main__":
         time.sleep(1)
         while True:
             time.sleep(1)
-            print("Time: {}, Yaw: {}, Pitch: {}, Roll: {}".format(navx.getLastTimeStamp(), navx.getYaw(), navx.getPitch(), navx.getRoll()))
+            print("Time: {}, Yaw: {}, Pitch: {}, Roll: {}".format(navx.getLastTimeStamp(),
+                                                                  navx.getYaw(), navx.getPitch(),
+                                                                  navx.getRoll()))

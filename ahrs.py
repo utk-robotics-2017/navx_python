@@ -1,12 +1,11 @@
-from enum import Enum
 from threading import Thread, Lock
-from I2C_IO import I2C_IO
-from AHRSProtocol import AHRSProtocol
-from ContinuousAngleTracker import ContinuousAngleTracker
-from OffsetTracker import OffsetTracker
-from InertialDataIntegrator import InertialDataIntegrator
-from TimestampedQuaternionHistory import TimestampedQuaternionHistory
-from ProcessCommands import ProcessCommands
+from i2c_io import I2C_IO
+from ahrs_protocol import AHRSProtocol
+from continuous_angle_rracker import ContinuousAngleTracker
+from offset_tracker import OffsetTracker
+from inertial_data_integrator import InertialDataIntegrator
+from timestamped_quaternion_history import TimestampedQuaternionHistory
+from process_commands import ProcessCommands
 
 import time
 
@@ -14,6 +13,7 @@ import logging
 from ourlogging import setup_logging
 setup_logging(__file__)
 logger = logging.getLogger(__name__)
+
 
 class get_ahrs:
     '''
@@ -73,12 +73,12 @@ class AHRS:
         self.fused_heading = 0.0
         self.altitude = 0.0
         self.baro_pressure = 0.0
-        #self.is_moving = False
-        #self.is_rotating = False
+        # self.is_moving = False
+        # self.is_rotating = False
         self.baro_sensor_temp_c = 0.0
-        #self.altitude_valid = False
-        #self.is_magnetometer_calibrated = False
-        #self.magnetic_disturbance = False
+        # self.altitude_valid = False
+        # self.is_magnetometer_calibrated = False
+        # self.magnetic_disturbance = False
         self.quaternionW = 0
         self.quaternionX = 0
         self.quaternionY = 0
@@ -130,7 +130,6 @@ class AHRS:
         self.lock = Lock()
         self.io = I2C_IO(self, self.update_rate_hz)
         self.start()
-
 
     def start(self):
         self.t = Thread(target=self.io.run, name="AHRS_I2C")
@@ -224,10 +223,15 @@ class AHRS:
                 child_conn.send(self.isMagnetometerCalibrated())
             elif cmd == ProcessCommands.MAGNETIC_DISTURBANCE:
                 child_conn.send(self.isMagneticDisturbance())
+            elif cmd == ProcessCommands.STOP:
+                self.stop()
+                break
+            elif cmd == ProcessCommands.FREE:
+                self.free()
+                break
             else:
                 logger.warn("Unknown Command: {}".format(cmd))
                 child_conn.send("Unknown Command")
-
 
     # calculated properties
     @property
@@ -267,7 +271,6 @@ class AHRS:
             :return The current pitch value in degrees (-180 to 180).
         '''
         return self.pitch
-
 
     def getRoll(self):
         '''
@@ -345,9 +348,9 @@ class AHRS:
             :return Returns true if the sensor is currently automatically
             calibrating the gyro and accelerometer sensors.
         '''
-        return not ((self.cal_status & \
-            AHRSProtocol.NAVX_CAL_STATUS_IMU_CAL_STATE_MASK) \
-            == AHRSProtocol.NAVX_CAL_STATUS_IMU_CAL_COMPLETE)
+        return not ((self.cal_status &
+                     AHRSProtocol.NAVX_CAL_STATUS_IMU_CAL_STATE_MASK)
+                    == AHRSProtocol.NAVX_CAL_STATUS_IMU_CAL_COMPLETE)
 
     def isConnected(self):
         '''
@@ -464,7 +467,6 @@ class AHRS:
         '''
         return self.baro_pressure
 
-
     def getAltitude(self):
         '''
             Returns the current altitude, based upon calibrated readings
@@ -480,7 +482,6 @@ class AHRS:
         '''
         return self.altitude
 
-
     def isAltitudeValid(self):
         '''
             Indicates whether the current altitude (and barometric pressure) data is
@@ -493,7 +494,6 @@ class AHRS:
             :return Returns true if a working pressure sensor is installed.
         '''
         return self.altitude_valid
-
 
     def getFusedHeading(self):
         '''
@@ -514,7 +514,6 @@ class AHRS:
         '''
         return self.fused_heading
 
-
     def isMagneticDisturbance(self):
         '''
             Indicates whether the current magnetic field strength diverges from the
@@ -527,7 +526,6 @@ class AHRS:
             :return true if a magnetic disturbance is detected (or the magnetometer is uncalibrated).
         '''
         return self.magnetic_disturbance
-
 
     def isMagnetometerCalibrated(self):
         '''
@@ -545,7 +543,6 @@ class AHRS:
 
     # Unit Quaternions
 
-
     def getQuaternionW(self):
         '''
             Returns the imaginary portion (W) of the Orientation Quaternion which
@@ -556,11 +553,11 @@ class AHRS:
             to 2.  This total range (4) can be associated with a unit circle, since
             each circle is comprised of 4 PI Radians.
 
-            For more information on Quaternions and their use, please see this <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>definition</a>.
+            For more information on Quaternions and their use, please see this
+            <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>definition</a>.
             :return Returns the imaginary portion (W) of the quaternion.
         '''
         return self.quaternionW / 16384.0
-
 
     def getQuaternionX(self):
         '''
@@ -572,11 +569,11 @@ class AHRS:
             to 2.  This total range (4) can be associated with a unit circle, since
             each circle is comprised of 4 PI Radians.
 
-            For more information on Quaternions and their use, please see this <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>description</a>.
+            For more information on Quaternions and their use, please see this
+            <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>description</a>.
             :return Returns the real portion (X) of the quaternion.
         '''
         return self.quaternionX / 16384.0
-
 
     def getQuaternionY(self):
         '''
@@ -596,7 +593,6 @@ class AHRS:
         '''
         return self.quaternionY / 16384.0
 
-
     def getQuaternionZ(self):
         '''
             Returns the real portion (X axis) of the Orientation Quaternion which
@@ -615,7 +611,6 @@ class AHRS:
         '''
         return self.quaternionZ / 16384.0
 
-
     def resetDisplacement(self):
         '''
             Zeros the displacement integration variables.   Invoke this at the moment when
@@ -626,7 +621,6 @@ class AHRS:
         else:
             self.integrator.resetDisplacement()
 
-
     def updateDisplacement(self, accel_x_g, accel_y_g, update_rate_hz, is_moving):
         '''
             Each time new linear acceleration samples are received, this function should be invoked.
@@ -636,7 +630,6 @@ class AHRS:
             :return none.
         '''
         self.integrator.updateDisplacement(accel_x_g, accel_y_g, update_rate_hz, is_moving)
-
 
     def getVelocityX(self):
         '''
@@ -651,7 +644,6 @@ class AHRS:
             return self.vel_x
         else:
             return self.integrator.getVelocityX()
-
 
     def getVelocityY(self):
         '''
@@ -741,7 +733,6 @@ class AHRS:
         '''
         return self.mpu_temp_c
 
-
     def getBoardYawAxis(self):
         '''
             Returns information regarding which sensor board axis (X,Y or Z) and
@@ -773,7 +764,6 @@ class AHRS:
 
         return up, yaw_axis
 
-
     def getFirmwareVersion(self):
         '''
             Returns the version number of the firmware currently executing
@@ -792,23 +782,23 @@ class AHRS:
 
     def getYawAtTime(self, requested_timestamp):
         match = self.quaternion_history.get(requested_timestamp)
-        if not match is None:
+        if match is not None:
             return match.getYaw()
         return 0.0
 
     def getPitchAtTime(self, requested_timestamp):
         match = self.quaternion_history.get(requested_timestamp)
-        if not match is None:
+        if match is not None:
             return match.getPitch()
         return 0.0
 
     def getRollAtTime(self, requested_timestamp):
         match = self.quaternion_history.get(requested_timestamp)
-        if not match is None:
+        if match is not None:
             return match.getRoll()
         return 0.0
 
-    ### Internal API
+    # Internal API
 
     def _isOmniMountSupported(self):
         return ((self.capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_OMNIMOUNT) != 0)
@@ -831,8 +821,9 @@ class AHRS:
         self.lock.acquire()
         self.__dict__.update(o.__dict__)
         self.last_sensor_timestamp = ts
-        if not self.quaternion_history is None:
-            self.quaternion_history.add(self.quaternionW, self.quaternionX, self.quaternionY, self.quaternionZ, self.last_sensor_timestamp)
+        if self.quaternion_history is not None:
+            self.quaternion_history.add(self.quaternionW, self.quaternionX, self.quaternionY,
+                                        self.quaternionZ, self.last_sensor_timestamp)
 
         self.yaw_offset_tracker.updateHistory(self.yaw)
         self.yaw_angle_tracker.nextAngle(self.getYaw())
@@ -848,8 +839,9 @@ class AHRS:
         self.lock.acquire()
         self.__dict__.update(o.__dict__)
         self.last_sensor_timestamp = ts
-        if not self.quaternion_history is None:
-            self.quaternion_history.add(self.quaternionW, self.quaternionX, self.quaternionY, self.quaternionZ, self.last_sensor_timestamp)
+        if self.quaternion_history is not None:
+            self.quaternion_history.add(self.quaternionW, self.quaternionX, self.quaternionY,
+                                        self.quaternionZ, self.last_sensor_timestamp)
 
         self.yaw_offset_tracker.updateHistory(self.yaw)
         self._updateDisplacement(o.world_linear_accel_x, o.world_linear_accel_y, self.update_rate_hz, self.is_moving)
@@ -871,4 +863,6 @@ if __name__ == "__main__":
         time.sleep(1)
         while True:
             time.sleep(1)
-            print("Time: {}, Yaw: {}, Pitch: {}, Roll: {}".format(navx.getLastTimeStamp(), navx.getYaw(), navx.getPitch(), navx.getRoll()))
+            print("Time: {}, Yaw: {}, Pitch: {}, Roll: {}".format(navx.getLastTimeStamp(),
+                                                                  navx.getYaw(), navx.getPitch(),
+                                                                  navx.getRoll()))

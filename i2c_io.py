@@ -2,14 +2,14 @@ import time
 
 import Adafruit_GPIO.I2C as I2C
 
-from Structs.AHRSPosUpdate import AHRSPosUpdate
-from Structs.AHRSUpdate import AHRSUpdate
-from Structs.GyroUpdate import GyroUpdate
-from Structs.BoardID import BoardID
-from Structs.BoardState import BoardState
+from structs.ahrs_pos_update import AHRSPosUpdate
+from structs.ahrs_update import AHRSUpdate
+from structs.gyro_update import GyroUpdate
+from structs.board_id import BoardID
+from structs.board_state import BoardState
 
-from IMURegisters import IMURegisters
-from AHRSProtocol import AHRSProtocol
+from imu_registers import IMURegisters
+from ahrs_protocol import AHRSProtocol
 
 import logging
 from ourlogging import setup_logging
@@ -107,12 +107,15 @@ class I2C_IO:
                 board_state.cal_status          = config[IMURegisters.NAVX_REG_CAL_STATUS]
                 board_state.op_status           = config[IMURegisters.NAVX_REG_OP_STATUS]
                 board_state.selftest_status     = config[IMURegisters.NAVX_REG_SELFTEST_STATUS]
-                board_state.sensor_status       = AHRSProtocol.decodeBinaryUint16(config, IMURegisters.NAVX_REG_SENSOR_STATUS_L)
-                board_state.gyro_fsr_dps        = AHRSProtocol.decodeBinaryUint16(config, IMURegisters.NAVX_REG_GYRO_FSR_DPS_L)
+                board_state.sensor_status       = AHRSProtocol.decodeBinaryUint16(config,
+                                                                                  IMURegisters.NAVX_REG_SENSOR_STATUS_L)
+                board_state.gyro_fsr_dps        = AHRSProtocol.decodeBinaryUint16(config,
+                                                                                  IMURegisters.NAVX_REG_GYRO_FSR_DPS_L)
                 board_state.accel_fsr_g         = config[IMURegisters.NAVX_REG_ACCEL_FSR_G]
                 board_state.update_rate_hz      = config[IMURegisters.NAVX_REG_UPDATE_RATE_HZ]
-                board_state.capability_flags    = AHRSProtocol.decodeBinaryUint16(config, IMURegisters.NAVX_REG_CAPABILITY_FLAGS_L)
-                self.ahrs._setBoardState(board_state);
+                board_state.capability_flags    = AHRSProtocol.decodeBinaryUint16(config,
+                                                                                  IMURegisters.NAVX_REG_CAPABILITY_FLAGS_L)
+                self.ahrs._setBoardState(board_state)
                 success = True
 
             retry_count += 1
@@ -133,12 +136,14 @@ class I2C_IO:
 
         current_data = self.read(first_address, read_count)
 
-        timestamp_low = AHRSProtocol.decodeBinaryUint16(current_data, IMURegisters.NAVX_REG_TIMESTAMP_L_L-first_address)
-        timestamp_high = AHRSProtocol.decodeBinaryUint16(current_data, IMURegisters.NAVX_REG_TIMESTAMP_H_L-first_address)
+        timestamp_low = AHRSProtocol.decodeBinaryUint16(current_data,
+                                                        IMURegisters.NAVX_REG_TIMESTAMP_L_L-first_address)
+        timestamp_high = AHRSProtocol.decodeBinaryUint16(current_data,
+                                                         IMURegisters.NAVX_REG_TIMESTAMP_H_L-first_address)
         sensor_timestamp = (timestamp_high << 16) + timestamp_low
 
         if sensor_timestamp == self.last_sensor_timestamp:
-            	return;
+            return
         self.last_sensor_timestamp = sensor_timestamp
 
         ahrspos_update = self.ahrspos_update
@@ -218,7 +223,10 @@ class I2C_IO:
         self.write(IMURegisters.NAVX_REG_INTEGRATION_CTL, AHRSProtocol.NAVX_INTEGRATION_CTL_RESET_YAW)
 
     def zeroDisplacement(self):
-        self.write(IMURegisters.NAVX_REG_INTEGRATION_CTL, (AHRSProtocol.NAVX_INTEGRATION_CTL_RESET_DISP_X | AHRSProtocol.NAVX_INTEGRATION_CTL_RESET_DISP_Y | AHRSProtocol.NAVX_INTEGRATION_CTL_RESET_DISP_Z))
+        self.write(IMURegisters.NAVX_REG_INTEGRATION_CTL,
+                   (AHRSProtocol.NAVX_INTEGRATION_CTL_RESET_DISP_X |
+                    AHRSProtocol.NAVX_INTEGRATION_CTL_RESET_DISP_Y |
+                    AHRSProtocol.NAVX_INTEGRATION_CTL_RESET_DISP_Z))
 
     def read(self, first_address, length):
         return self.i2c.readList(first_address, length)

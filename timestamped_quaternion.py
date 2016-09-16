@@ -1,9 +1,9 @@
-from Quaternion import Quaternion
+from quaternion import Quaternion
 
 
 class TimestampedQuaternion(Quaternion):
     def __init__(self, src=None, timestamp=None):
-        if not src is None:
+        if src is not None:
             Quaternion.__init__(self, src.w, src.x, src.y, src.z)
         else:
             Quaternion.__init__(self)

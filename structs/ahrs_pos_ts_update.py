@@ -1,4 +1,5 @@
-from AHRSPosUpdate import AHRSPosUpdate
+from ahrs_pos_update import AHRSPosUpdate
+
 
 class AHRSPosTSUpdate(AHRSPosUpdate):
     quat_w_f = 0.0
