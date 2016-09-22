@@ -28,9 +28,9 @@ class Quaternion:
 
     @staticmethod
     def getGravity(v, q):
-        v.x = 2 * (q.x*q.z - q.w*q.y)
-        v.y = 2 * (q.w*q.x + q.y*q.z)
-        v.z = q.w*q.w - q.x*q.x - q.y*q.y + q.z*q.z
+        v.x = 2 * (q.x * q.z - q.w * q.y)
+        v.y = 2 * (q.w * q.x + q.y * q.z)
+        v.z = q.w * q.w - q.x * q.x - q.y * q.y + q.z * q.z
 
     @staticmethod
     def getYawPitchRollStatic(q, gravity, ypr):

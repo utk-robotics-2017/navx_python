@@ -55,10 +55,10 @@ class AHRS:
     '''
 
     NAVX_DEFAULT_UPDATE_RATE_HZ = 60
-    YAW_HISTORY_LENGTH          = 10
-    DEFAULT_ACCEL_FSR_G         = 2
-    DEFAULT_GYRO_FSR_DPS        = 2000
-    QUATERNION_HISTORY_SECONDS  = 5.0
+    YAW_HISTORY_LENGTH = 10
+    DEFAULT_ACCEL_FSR_G = 2
+    DEFAULT_GYRO_FSR_DPS = 2000
+    QUATERNION_HISTORY_SECONDS = 5.0
 
     def __init__(self, update_rate_hz=NAVX_DEFAULT_UPDATE_RATE_HZ):
         # Processed Data
@@ -349,8 +349,8 @@ class AHRS:
             calibrating the gyro and accelerometer sensors.
         '''
         return not ((self.cal_status &
-                     AHRSProtocol.NAVX_CAL_STATUS_IMU_CAL_STATE_MASK)
-                    == AHRSProtocol.NAVX_CAL_STATUS_IMU_CAL_COMPLETE)
+                     AHRSProtocol.NAVX_CAL_STATUS_IMU_CAL_STATE_MASK) ==
+                    AHRSProtocol.NAVX_CAL_STATUS_IMU_CAL_COMPLETE)
 
     def isConnected(self):
         '''
