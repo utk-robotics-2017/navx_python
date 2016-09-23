@@ -1,8 +1,9 @@
 from collections import deque
 
+
 class OffsetTracker:
     def __init__(self, history_length):
-        self.value_history = deque([0]*history_length, maxlen=history_length)
+        self.value_history = deque([0] * history_length, maxlen=history_length)
         self.value_offset = 0
 
     def updateHistory(self, value):

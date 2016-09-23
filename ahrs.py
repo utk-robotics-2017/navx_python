@@ -1,7 +1,13 @@
-from multiprocessing import Process, Pipe, Lock
+from threading import Thread, Lock
+from i2c_io import I2C_IO
+from ahrs_protocol import AHRSProtocol
+from continuous_angle_tracker import ContinuousAngleTracker
+from offset_tracker import OffsetTracker
+from inertial_data_integrator import InertialDataIntegrator
+from timestamped_quaternion_history import TimestampedQuaternionHistory
+from process_commands import ProcessCommands
 
-from AHRS import AHRS
-from ProcessCommands import ProcessCommands
+import time
 
 import logging
 from ourlogging import setup_logging
@@ -9,7 +15,7 @@ setup_logging(__file__)
 logger = logging.getLogger(__name__)
 
 
-class get_navx:
+class get_ahrs:
     '''
         Controlled environment for reading from the NavX.
     '''
@@ -18,49 +24,247 @@ class get_navx:
 
     def __enter__(self):
         if self.update_rate_hz is None:
-            self.navx = NavX()
+            self.navx = AHRS(True)
         else:
-            self.navx = NavX(self.update_rate_hz)
+            self.navx = AHRS(True, self.update_rate_hz)
         return self.navx
 
     def __exit__(self, type, value, traceback):
         self.navx.free()
 
-class NavX:
-    def __init__(self, update_rate_hz=None):
-        if update_rate_hz is None:
-            self.ahrs = AHRS()
-        else:
-            self.ahrs = AHRS(update_rate_hz)
-        self.start()
+
+class AHRS:
+    '''
+    The AHRS class provides an interface to AHRS capabilities
+    of the KauaiLabs navX Robotics Navigation Sensor via I2C
+    communications interfaces on the Raspberry Pi.
+
+    The AHRS class enables access to basic connectivity and state information,
+    as well as key 6-axis and 9-axis orientation information (yaw, pitch, roll,
+    compass heading, fused (9-axis) heading and magnetic disturbance detection.
+
+    Additionally, the ARHS class also provides access to extended information
+    including linear acceleration, motion detection, rotation detection and sensor
+    temperature.
+
+    If used with the navX Aero, the AHRS class also provides access to
+    altitude, barometric pressure and pressure sensor temperature data
+
+    .. note:: This implementation does not provide access to the NavX via
+              a serial port
+    '''
+
+    NAVX_DEFAULT_UPDATE_RATE_HZ = 60
+    YAW_HISTORY_LENGTH = 10
+    DEFAULT_ACCEL_FSR_G = 2
+    DEFAULT_GYRO_FSR_DPS = 2000
+    QUATERNION_HISTORY_SECONDS = 5.0
+
+    def __init__(self, start_immediately=False, update_rate_hz=NAVX_DEFAULT_UPDATE_RATE_HZ):
+        # Processed Data
+        self.yaw = 0.0
+        self.pitch = 0.0
+        self.roll = 0.0
+        self.compass_heading = 0.0
+        self.world_linear_accel_x = 0.0
+        self.world_linear_accel_y = 0.0
+        self.world_linear_accel_z = 0.0
+        self.mpu_temp_c = 0.0
+        self.fused_heading = 0.0
+        self.altitude = 0.0
+        self.baro_pressure = 0.0
+        # self.is_moving = False
+        # self.is_rotating = False
+        self.baro_sensor_temp_c = 0.0
+        # self.altitude_valid = False
+        # self.is_magnetometer_calibrated = False
+        # self.magnetic_disturbance = False
+        self.quaternionW = 0
+        self.quaternionX = 0
+        self.quaternionY = 0
+        self.quaternionZ = 0
+
+        # Integrated Data
+        self.vel_x = 0
+        self.vel_y = 0
+        self.vel_z = 0
+        self.disp_x = 0
+        self.disp_y = 0
+        self.disp_z = 0
+
+        # Raw Data
+        self.raw_gyro_x = 0
+        self.raw_gyro_y = 0
+        self.raw_gyro_z = 0
+        self.raw_accel_x = 0
+        self.raw_accel_y = 0
+        self.raw_accel_z = 0
+        self.cal_mag_x = 0
+        self.cal_mag_y = 0
+        self.cal_mag_z = 0
+
+        # Configuration/Status
+        self.update_rate_hz = update_rate_hz
+        self.accel_fsr_g = self.DEFAULT_ACCEL_FSR_G
+        self.gyro_fsr_dps = self.DEFAULT_GYRO_FSR_DPS
+        self.capability_flags = 0
+        self.op_status = 0
+        self.sensor_status = 0
+        self.cal_status = 0
+        self.selftest_status = 0
+
+        # Board ID
+        self.board_type = 0
+        self.hw_rev = 0
+        self.fw_ver_major = 0
+        self.fw_ver_minor = 0
+
+        self.last_sensor_timestamp = 0
+        self.last_update_time = 0.0
+
+        self.integrator = InertialDataIntegrator()
+        self.yaw_angle_tracker = ContinuousAngleTracker()
+        self.yaw_offset_tracker = OffsetTracker(self.YAW_HISTORY_LENGTH)
+        self.quaternion_history = TimestampedQuaternionHistory()
+
+        self.lock = Lock()
+        self.io = I2C_IO(self, self.update_rate_hz)
+        if start_immediately:
+            self.start()
 
     def start(self):
-        self.parent_conn, child_conn = Pipe()
-        self.lock = Lock()
-        self.p = Process(target=self.ahrs.response, name="NavX", args=(child_conn,))
-        self.p.start()
+        self.t = Thread(target=self.io.run, name="AHRS_I2C")
+        self.t.start()
 
     def stop(self):
-        self.ahrs.stop()
+        self.running = False
+        self.io.stop()
 
     def free(self):
         self.stop()
 
-        self.p.join(timeout=5)
-        if self.p.is_alive():
-            self.p.terminate()
+        self.t.join(timeout=5)
+        if self.t.is_alive():
+            self.t.terminate()
+
+    def response(self, child_conn):
+        self.running = True
+
+        if not hasattr(self, 't') or self.t is None or self.t.is_alive() is False:
+            self.start()
+
+        while self.running:
+            if child_conn.poll():
+                cmd = child_conn.recv()
+            else:
+                time.sleep(.01)
+                continue
+            if cmd == ProcessCommands.TIME:
+                child_conn.send(self.getLastTimeStamp())
+            elif cmd == ProcessCommands.YAW:
+                child_conn.send(self.getYaw())
+            elif cmd == ProcessCommands.PITCH:
+                child_conn.send(self.getPitch())
+            elif cmd == ProcessCommands.ROLL:
+                child_conn.send(self.getRoll())
+            elif cmd == ProcessCommands.COMPASS_HEADING:
+                child_conn.send(self.getCompassHeading())
+            elif cmd == ProcessCommands.ZERO_YAW:
+                self.zeroYaw()
+                child_conn.send("ok")
+            elif cmd == ProcessCommands.IS_CALIBRATING:
+                child_conn.send(self.isCalibrating())
+            elif cmd == ProcessCommands.IS_CONNECTED:
+                child_conn.send(self.isConnected())
+            elif cmd == ProcessCommands.BYTE_COUNT:
+                child_conn.send(self.getByteCount())
+            elif cmd == ProcessCommands.UPDATE_COUNT:
+                child_conn.send(self.getUpdateCount())
+            elif cmd == ProcessCommands.WORLD_LINEAR_ACCEL_X:
+                child_conn.send(self.getWorldLinearAccelX())
+            elif cmd == ProcessCommands.WORLD_LINEAR_ACCEL_Y:
+                child_conn.send(self.getWorldLinearAccelY())
+            elif cmd == ProcessCommands.WORLD_LINEAR_ACCEL_Z:
+                child_conn.send(self.getWorldLinearAccelZ())
+            elif cmd == ProcessCommands.BAROMETRIC_PRESSUE:
+                child_conn.send(self.getBarometricPressure())
+            elif cmd == ProcessCommands.ALTITUDE:
+                child_conn.send(self.getAltitude())
+            elif cmd == ProcessCommands.FUSED_HEADING:
+                child_conn.send(self.getFusedHeading())
+            elif cmd == ProcessCommands.QUATERNION_W:
+                child_conn.send(self.getQuaternionW())
+            elif cmd == ProcessCommands.QUATERNION_X:
+                child_conn.send(self.getQuaternionX())
+            elif cmd == ProcessCommands.QUATERNION_Y:
+                child_conn.send(self.getQuaternionY())
+            elif cmd == ProcessCommands.QUATERNION_Z:
+                child_conn.send(self.getQuaternionZ())
+            elif cmd == ProcessCommands.RESET_DISPLACEMENT:
+                self.resetDisplacement()
+                child_conn.send("ok")
+            elif cmd == ProcessCommands.VELOCITY_X:
+                child_conn.send(self.getVelocityX())
+            elif cmd == ProcessCommands.VELOCITY_Y:
+                child_conn.send(self.getVelocityY())
+            elif cmd == ProcessCommands.VELOCITY_Z:
+                child_conn.send(self.getVelocityZ())
+            elif cmd == ProcessCommands.DISPLACEMENT_X:
+                child_conn.send(self.getDisplacementX())
+            elif cmd == ProcessCommands.DISPLACEMENT_Y:
+                child_conn.send(self.getDisplacementY())
+            elif cmd == ProcessCommands.DISPLACEMENT_Z:
+                child_conn.send(self.getDisplacementZ())
+            elif cmd == ProcessCommands.TEMP_C:
+                child_conn.send(self.getTempC())
+            elif cmd == ProcessCommands.IS_MOVING:
+                child_conn.send(self.isMoving())
+            elif cmd == ProcessCommands.IS_ROTATING:
+                child_conn.send(self.isRotating())
+            elif cmd == ProcessCommands.ALTITUDE_VALID:
+                child_conn.send(self.isAltitudeValid())
+            elif cmd == ProcessCommands.IS_MAGNETOMETER_CALIBRATED:
+                child_conn.send(self.isMagnetometerCalibrated())
+            elif cmd == ProcessCommands.MAGNETIC_DISTURBANCE:
+                child_conn.send(self.isMagneticDisturbance())
+            elif cmd == ProcessCommands.STOP:
+                self.stop()
+                break
+            elif cmd == ProcessCommands.FREE:
+                self.free()
+                break
+            else:
+                logger.warn("Unknown Command: {}".format(cmd))
+                child_conn.send("Unknown Command")
+
+    # calculated properties
+    @property
+    def is_moving(self):
+        return (self.sensor_status & AHRSProtocol.NAVX_SENSOR_STATUS_MOVING) != 0
+
+    @property
+    def is_rotating(self):
+        return (self.sensor_status & AHRSProtocol.NAVX_SENSOR_STATUS_YAW_STABLE) == 0
+
+    @property
+    def altitude_valid(self):
+        return (self.sensor_status & AHRSProtocol.NAVX_SENSOR_STATUS_ALTITUDE_VALID) != 0
+
+    @property
+    def is_magnetometer_calibrated(self):
+        return (self.sensor_status & AHRSProtocol.NAVX_CAL_STATUS_MAG_CAL_COMPLETE) != 0
+
+    @property
+    def magnetic_disturbance(self):
+        return (self.sensor_status & AHRSProtocol.NAVX_SENSOR_STATUS_MAG_DISTURBANCE) != 0
 
     def getLastTimeStamp(self):
         '''
-            Returns the last time stamp reported by the sensor.
+            Returns the last time stamp reported by the sensor
 
-            :return The last time stamp reported by the sensor
+            :return The last time stamp
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.TIME)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        return self.last_sensor_timestamp
 
     def getPitch(self):
         '''
@@ -70,11 +274,7 @@ class NavX:
 
             :return The current pitch value in degrees (-180 to 180).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.PITCH)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        return self.pitch
 
     def getRoll(self):
         '''
@@ -84,11 +284,7 @@ class NavX:
 
             :return The current roll value in degrees (-180 to 180).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.ROLL)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        return self.roll
 
     def getYaw(self):
         '''
@@ -102,11 +298,11 @@ class NavX:
 
             :return The current yaw value in degrees (-180 to 180).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.YAW)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        if (self._isBoardYawResetSupported()):
+            return self.yaw
+        else:
+            yaw = self.yaw_offset_tracker.applyOffset(self.yaw)
+            return yaw
 
     def getCompassHeading(self):
         '''
@@ -123,11 +319,7 @@ class NavX:
             was generated.
             :return The current tilt-compensated compass heading, in degrees (0-360).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.COMPASS_HEADING)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        return self.compass_heading
 
     def zeroYaw(self):
         '''
@@ -138,11 +330,10 @@ class NavX:
             subtracted from subsequent yaw values reported by
             the getYaw() method.
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.ZERO_YAW)
-        response = self.parent_conn.recv()
-        assert response == "ok"
-        self.lock.release()
+        if (self._isBoardYawResetSupported()):
+            self.io.zeroYaw()
+        else:
+            self.yaw_offset_tracker.setOffset()
 
     def isCalibrating(self):
         '''
@@ -161,8 +352,9 @@ class NavX:
             :return Returns true if the sensor is currently automatically
             calibrating the gyro and accelerometer sensors.
         '''
-        self.parent_conn.send(ProcessCommands.IS_CALIBRATING)
-        return self.parent_conn.recv()
+        return not ((self.cal_status &
+                     AHRSProtocol.NAVX_CAL_STATUS_IMU_CAL_STATE_MASK) ==
+                    AHRSProtocol.NAVX_CAL_STATUS_IMU_CAL_COMPLETE)
 
     def isConnected(self):
         '''
@@ -173,11 +365,7 @@ class NavX:
             :returns: Returns true if a valid update has been recently received
                   from the sensor.
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.IS_CONNECTED)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        return self.io.isConnected()
 
     def getByteCount(self):
         '''
@@ -191,11 +379,7 @@ class NavX:
 
             :returns: The number of bytes received from the sensor.
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.BYTE_COUNT)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        return self.io.getByteCount()
 
     def getUpdateCount(self):
         '''
@@ -205,11 +389,8 @@ class NavX:
 
             :returns: The number of valid updates received from the sensor.
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.UPDATE_COUNT)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+
+        return self.io.getUpdateCount()
 
     def getWorldLinearAccelX(self):
         '''
@@ -223,11 +404,7 @@ class NavX:
 
             :return Current world linear acceleration in the X-axis (in G).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.WORLD_LINEAR_ACCEL_X)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        return self.world_linear_accel_x
 
     def getWorldLinearAccelY(self):
         '''
@@ -241,11 +418,7 @@ class NavX:
 
             :return Current world linear acceleration in the Y-axis (in G).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.WORLD_LINEAR_ACCEL_Y)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        return self.world_linear_accel_y
 
     def getWorldLinearAccelZ(self):
         '''
@@ -259,11 +432,7 @@ class NavX:
 
             :return Current world linear acceleration in the Z-axis (in G).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.WORLD_LINEAR_ACCEL_Z)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        return self.world_linear_accel_z
 
     def isMoving(self):
         '''
@@ -274,11 +443,7 @@ class NavX:
 
             :return Returns true if the sensor is currently detecting motion.
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.IS_MOVING)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        return self.is_moving
 
     def isRotating(self):
         '''
@@ -292,11 +457,7 @@ class NavX:
 
             :return Returns true if the sensor is currently detecting motion.
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.IS_ROTATING)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        return self.is_rotating
 
     def getBarometricPressure(self):
         '''
@@ -308,12 +469,7 @@ class NavX:
 
             :return Returns current barometric pressure (navX Aero only).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.BAROMETRIC_PRESSUE)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
-
+        return self.baro_pressure
 
     def getAltitude(self):
         '''
@@ -328,12 +484,7 @@ class NavX:
             :return Returns current altitude in meters (as long as the sensor includes
             an installed on-board pressure sensor).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.ALTITUDE)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
-
+        return self.altitude
 
     def isAltitudeValid(self):
         '''
@@ -346,12 +497,7 @@ class NavX:
 
             :return Returns true if a working pressure sensor is installed.
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.ALTITUDE_VALID)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
-
+        return self.altitude_valid
 
     def getFusedHeading(self):
         '''
@@ -370,12 +516,7 @@ class NavX:
 
             :return Fused Heading in Degrees (range 0-360)
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.FUSED_HEADING)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
-
+        return self.fused_heading
 
     def isMagneticDisturbance(self):
         '''
@@ -388,12 +529,7 @@ class NavX:
 
             :return true if a magnetic disturbance is detected (or the magnetometer is uncalibrated).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.MAGNETIC_DISTURBANCE)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
-
+        return self.magnetic_disturbance
 
     def isMagnetometerCalibrated(self):
         '''
@@ -407,14 +543,9 @@ class NavX:
 
             :return Returns true if magnetometer calibration has been performed.
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.IS_MAGNETOMETER_CALIBRATED)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        return self.is_magnetometer_calibrated
 
     # Unit Quaternions
-
 
     def getQuaternionW(self):
         '''
@@ -426,15 +557,11 @@ class NavX:
             to 2.  This total range (4) can be associated with a unit circle, since
             each circle is comprised of 4 PI Radians.
 
-            For more information on Quaternions and their use, please see this <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>definition</a>.
+            For more information on Quaternions and their use, please see this
+            <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>definition</a>.
             :return Returns the imaginary portion (W) of the quaternion.
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.QUATERNION_W)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
-
+        return self.quaternionW / 16384.0
 
     def getQuaternionX(self):
         '''
@@ -446,15 +573,11 @@ class NavX:
             to 2.  This total range (4) can be associated with a unit circle, since
             each circle is comprised of 4 PI Radians.
 
-            For more information on Quaternions and their use, please see this <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>description</a>.
+            For more information on Quaternions and their use, please see this
+            <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>description</a>.
             :return Returns the real portion (X) of the quaternion.
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.QUATERNION_X)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
-
+        return self.quaternionX / 16384.0
 
     def getQuaternionY(self):
         '''
@@ -472,12 +595,7 @@ class NavX:
 
             :return Returns the real portion (X) of the quaternion.
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.QUATERNION_Y)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
-
+        return self.quaternionY / 16384.0
 
     def getQuaternionZ(self):
         '''
@@ -495,24 +613,27 @@ class NavX:
 
             :return Returns the real portion (X) of the quaternion.
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.QUATERNION_Z)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
-
+        return self.quaternionZ / 16384.0
 
     def resetDisplacement(self):
         '''
             Zeros the displacement integration variables.   Invoke this at the moment when
             integration begins.
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.IS_CALIBRATING)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        assert response == "ok"
+        if (self._isDisplacementSupported()):
+            self.io.zeroDisplacement()
+        else:
+            self.integrator.resetDisplacement()
 
+    def updateDisplacement(self, accel_x_g, accel_y_g, update_rate_hz, is_moving):
+        '''
+            Each time new linear acceleration samples are received, this function should be invoked.
+            This function transforms acceleration in G to meters/sec^2, then converts this value to
+            Velocity in meters/sec (based upon velocity in the previous sample).  Finally, this value
+            is converted to displacement in meters, and integrated.
+            :return none.
+        '''
+        self.integrator.updateDisplacement(accel_x_g, accel_y_g, update_rate_hz, is_moving)
 
     def getVelocityX(self):
         '''
@@ -523,12 +644,10 @@ class NavX:
             resulting velocities are not known to be very accurate.
             :return Current Velocity (in meters/squared).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.VELOCITY_X)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
-
+        if self._isDisplacementSupported():
+            return self.vel_x
+        else:
+            return self.integrator.getVelocityX()
 
     def getVelocityY(self):
         '''
@@ -539,11 +658,10 @@ class NavX:
             resulting velocities are not known to be very accurate.
             :return Current Velocity (in meters/squared).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.VELOCITY_Y)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        if self._isDisplacementSupported():
+            return self.vel_y
+        else:
+            return self.integrator.getVelocityY()
 
     def getVelocityZ(self):
         '''
@@ -554,11 +672,10 @@ class NavX:
             resulting velocities are not known to be very accurate.
             :return Current Velocity (in meters/squared).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.VELOCITY_Z)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        if self._isDisplacementSupported():
+            return self.vel_z
+        else:
+            return self.integrator.getVelocityZ()
 
     def getDisplacementX(self):
         '''
@@ -571,11 +688,10 @@ class NavX:
             increases quickly as time progresses.
             :return Displacement since last reset (in meters).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.DISPLACEMENT_X)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        if self._isDisplacementSupported():
+            return self.disp_x
+        else:
+            return self.integrator.getDisplacementX()
 
     def getDisplacementY(self):
         '''
@@ -588,11 +704,10 @@ class NavX:
             increases quickly as time progresses.
             :return Displacement since last reset (in meters).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.DISPLACEMENT_Y)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        if self._isDisplacementSupported():
+            return self.disp_y
+        else:
+            return self.integrator.getDisplacementY()
 
     def getDisplacementZ(self):
         '''
@@ -605,11 +720,10 @@ class NavX:
             increases quickly as time progresses.
             :return Displacement since last reset (in meters).
         '''
-        self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.DISPLACEMENT_Z)
-        response = self.parent_conn.recv()
-        self.lock.release()
-        return response
+        if self._isDisplacementSupported():
+            return self.disp_z
+        else:
+            return self.integrator.getDisplacementZ()
 
     def getTempC(self):
         '''
@@ -621,15 +735,138 @@ class NavX:
 
             :return The current temperature (in degrees centigrade).
         '''
+        return self.mpu_temp_c
+
+    def getBoardYawAxis(self):
+        '''
+            Returns information regarding which sensor board axis (X,Y or Z) and
+            direction (up/down) is currently configured to report Yaw (Z) angle
+            values.   NOTE:  If the board firmware supports Omnimount, the board yaw
+            axis/direction are configurable.
+
+            For more information on Omnimount, please see:
+
+            http://navx-mxp.kauailabs.com/navx-mxp/installation/omnimount/
+
+            :returns: The currently-configured board yaw axis/direction as a
+                  tuple of (up, axis). Up can be True/False, axis is 'x', 'y', or 'z')
+        '''
+        yaw_axis_info = self.capability_flags >> 3
+        yaw_axis_info &= 7
+        if yaw_axis_info == AHRSProtocol.OMNIMOUNT_DEFAULT:
+            up = True
+            yaw_axis = 'z'
+        else:
+            up = True if yaw_axis_info & 0x01 != 0 else False
+            yaw_axis_info >>= 1
+            if yaw_axis_info == 0:
+                yaw_axis = 'x'
+            elif yaw_axis_info == 1:
+                yaw_axis = 'y'
+            elif yaw_axis_info == 2:
+                yaw_axis = 'z'
+
+        return up, yaw_axis
+
+    def getFirmwareVersion(self):
+        '''
+            Returns the version number of the firmware currently executing
+            on the sensor.
+
+            To update the firmware to the latest version, please see:
+
+            http://navx-mxp.kauailabs.com/navx-mxp/support/updating-firmware/
+
+            :return The firmware version in the format [MajorVersion].[MinorVersion]
+        '''
+        return '%s.%s' % (self.fw_ver_major, self.fw_ver_minor)
+
+    def getQuaternionAtTime(self, requested_timestamp):
+        return self.quaternion_history.get(requested_timestamp)
+
+    def getYawAtTime(self, requested_timestamp):
+        match = self.quaternion_history.get(requested_timestamp)
+        if match is not None:
+            return match.getYaw()
+        return 0.0
+
+    def getPitchAtTime(self, requested_timestamp):
+        match = self.quaternion_history.get(requested_timestamp)
+        if match is not None:
+            return match.getPitch()
+        return 0.0
+
+    def getRollAtTime(self, requested_timestamp):
+        match = self.quaternion_history.get(requested_timestamp)
+        if match is not None:
+            return match.getRoll()
+        return 0.0
+
+    # Internal API
+
+    def _isOmniMountSupported(self):
+        return ((self.capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_OMNIMOUNT) != 0)
+
+    def _isBoardYawResetSupported(self):
+        return ((self.capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_YAW_RESET) != 0)
+
+    def _isDisplacementSupported(self):
+        return ((self.capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_VEL_AND_DISP) != 0)
+
+    def _isAHRSPosTimestampSupported(self):
+        return ((self.capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_AHRSPOS_TS) != 0)
+
+    def _setYawPitchRoll(self, o):
         self.lock.acquire()
-        self.parent_conn.send(ProcessCommands.TEMP_C)
-        response = self.parent_conn.recv()
+        self.__dict__.update(o.__dict__)
         self.lock.release()
-        return response
+
+    def _setAHRSPosData(self, o, ts):
+        self.lock.acquire()
+        self.__dict__.update(o.__dict__)
+        self.last_sensor_timestamp = ts
+        if self.quaternion_history is not None:
+            self.quaternion_history.add(self.quaternionW, self.quaternionX, self.quaternionY,
+                                        self.quaternionZ, self.last_sensor_timestamp)
+
+        self.yaw_offset_tracker.updateHistory(self.yaw)
+        self.yaw_angle_tracker.nextAngle(self.getYaw())
+        self.lock.release()
+
+    def _setRawData(self, o, ts):
+        self.lock.acquire()
+        self.__dict__.update(o.__dict__)
+        self.last_sensor_timestamp = ts
+        self.lock.release()
+
+    def _setAHRSData(self, o, ts):
+        self.lock.acquire()
+        self.__dict__.update(o.__dict__)
+        self.last_sensor_timestamp = ts
+        if self.quaternion_history is not None:
+            self.quaternion_history.add(self.quaternionW, self.quaternionX, self.quaternionY,
+                                        self.quaternionZ, self.last_sensor_timestamp)
+
+        self.yaw_offset_tracker.updateHistory(self.yaw)
+        self._updateDisplacement(o.world_linear_accel_x, o.world_linear_accel_y, self.update_rate_hz, self.is_moving)
+        self.yaw_angle_tracker.nextAngle(self.getYaw())
+        self.lock.acquire()
+
+    def _setBoardID(self, o):
+        self.lock.acquire()
+        self.__dict__.update(o.__dict__)
+        self.lock.release()
+
+    def _setBoardState(self, o):
+        self.lock.acquire()
+        self.__dict__.update(o.__dict__)
+        self.lock.release()
 
 if __name__ == "__main__":
-    with get_navx(10) as navx:
+    with get_ahrs(10) as navx:
         time.sleep(1)
         while True:
             time.sleep(1)
-            print("Time: {}, Yaw: {}, Pitch: {}, Roll: {}".format(navx.getLastTimeStamp(), navx.getYaw(), navx.getPitch(), navx.getRoll()))
+            print("Time: {}, Yaw: {}, Pitch: {}, Roll: {}".format(navx.getLastTimeStamp(),
+                                                                  navx.getYaw(), navx.getPitch(),
+                                                                  navx.getRoll()))

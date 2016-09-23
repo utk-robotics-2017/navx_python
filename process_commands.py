@@ -34,3 +34,6 @@ class ProcessCommands:
     DISPLACEMENT_Y = 'dy'
     DISPLACEMENT_Z = 'dz'
     TEMP_C = 'tc'
+
+    STOP = 's'
+    FREE = 'f'

@@ -1,5 +1,5 @@
-from Quaternion import Quaternion
-from TimestampedQuaternion import TimestampedQuaternion
+from quaternion import Quaternion
+from timestamped_quaternion import TimestampedQuaternion
 
 
 class TimestampedQuaternionHistory:
@@ -31,9 +31,14 @@ class TimestampedQuaternionHistory:
                     timestamp_delta = next_timestamp - previous_timestamp
                     requested_timestamp_offset = requested_timestamp - previous_timestamp
                     requested_timestamp_ratio = requested_timestamp_offset / timestamp_delta
-                    interpolated_quaternion = Quaternion.slerp(self.history[previous_timestamp], self.history[next_timestamp], requested_timestamp_ratio)
+                    interpolated_quaternion = Quaternion.slerp(self.history[previous_timestamp],
+                                                               self.history[next_timestamp],
+                                                               requested_timestamp_ratio)
 
-                    match = TimestampedQuaternion(interpolated_quaternion.w, interpolated_quaternion.x, interpolated_quaternion.y, interpolated_quaternion.z, requested_timestamp)
+                    match = TimestampedQuaternion(interpolated_quaternion.w,
+                                                  interpolated_quaternion.x,
+                                                  interpolated_quaternion.y,
+                                                  interpolated_quaternion.z, requested_timestamp)
                     match.setInterpolated(True)
                     return match
             return None

@@ -4,4 +4,4 @@ class BoardID:
     fw_ver_major = 0
     fw_ver_minor = 0
     fw_revision = 0
-    unique_id = [0]*12
+    unique_id = [0] * 12
