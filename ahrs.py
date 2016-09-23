@@ -1,7 +1,7 @@
 from threading import Thread, Lock
 from i2c_io import I2C_IO
 from ahrs_protocol import AHRSProtocol
-from continuous_angle_rracker import ContinuousAngleTracker
+from continuous_angle_tracker import ContinuousAngleTracker
 from offset_tracker import OffsetTracker
 from inertial_data_integrator import InertialDataIntegrator
 from timestamped_quaternion_history import TimestampedQuaternionHistory
