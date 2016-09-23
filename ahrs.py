@@ -24,9 +24,9 @@ class get_ahrs:
 
     def __enter__(self):
         if self.update_rate_hz is None:
-            self.navx = AHRS()
+            self.navx = AHRS(True)
         else:
-            self.navx = AHRS(self.update_rate_hz)
+            self.navx = AHRS(True, self.update_rate_hz)
         return self.navx
 
     def __exit__(self, type, value, traceback):
@@ -60,7 +60,7 @@ class AHRS:
     DEFAULT_GYRO_FSR_DPS = 2000
     QUATERNION_HISTORY_SECONDS = 5.0
 
-    def __init__(self, update_rate_hz=NAVX_DEFAULT_UPDATE_RATE_HZ):
+    def __init__(self, start_immediately=False, update_rate_hz=NAVX_DEFAULT_UPDATE_RATE_HZ):
         # Processed Data
         self.yaw = 0.0
         self.pitch = 0.0
@@ -129,7 +129,8 @@ class AHRS:
 
         self.lock = Lock()
         self.io = I2C_IO(self, self.update_rate_hz)
-        self.start()
+        if start_immediately:
+            self.start()
 
     def start(self):
         self.t = Thread(target=self.io.run, name="AHRS_I2C")
@@ -148,6 +149,9 @@ class AHRS:
 
     def response(self, child_conn):
         self.running = True
+
+        if not hasattr(self, 't') or self.t is None or self.t.is_alive() is False:
+            self.start()
 
         while self.running:
             if child_conn.poll():

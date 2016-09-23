@@ -33,7 +33,7 @@ class NavX:
         if update_rate_hz is None:
             self.ahrs = AHRS()
         else:
-            self.ahrs = AHRS(update_rate_hz)
+            self.ahrs = AHRS(update_rate_hz=update_rate_hz)
         self.start()
 
     def start(self):
