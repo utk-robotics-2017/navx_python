@@ -1,12 +1,19 @@
 from multiprocessing import Process, Pipe, Lock
 import time
-
-from ahrs import AHRS
-from process_commands import ProcessCommands
-from units import *
-
 import logging
-from ourlogging import setup_logging
+
+if __name__ == "__main__":
+    from ahrs import AHRS
+    from process_commands import ProcessCommands
+    from units import *
+    from ourlogging import setup_logging
+else:
+    from .ahrs import AHRS
+    from .process_commands import ProcessCommands
+    from .units import *
+    from .ourlogging import setup_logging
+
+
 setup_logging(__file__)
 logger = logging.getLogger(__name__)
 

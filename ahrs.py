@@ -1,17 +1,27 @@
 from threading import Thread, Lock
-from i2c_io import I2C_IO
-from ahrs_protocol import AHRSProtocol
-from continuous_angle_tracker import ContinuousAngleTracker
-from offset_tracker import OffsetTracker
-from inertial_data_integrator import InertialDataIntegrator
-from timestamped_quaternion_history import TimestampedQuaternionHistory
-from process_commands import ProcessCommands
-from units import *
-
 import time
-
 import logging
-from ourlogging import setup_logging
+
+if __name__ == "__main__":
+    from i2c_io import I2C_IO
+    from ahrs_protocol import AHRSProtocol
+    from continuous_angle_tracker import ContinuousAngleTracker
+    from offset_tracker import OffsetTracker
+    from inertial_data_integrator import InertialDataIntegrator
+    from timestamped_quaternion_history import TimestampedQuaternionHistory
+    from process_commands import ProcessCommands
+    from units import *
+    from ourlogging import setup_logging
+else:
+    from i2c_io import I2C_IO
+    from ahrs_protocol import AHRSProtocol
+    from continuous_angle_tracker import ContinuousAngleTracker
+    from offset_tracker import OffsetTracker
+    from inertial_data_integrator import InertialDataIntegrator
+    from timestamped_quaternion_history import TimestampedQuaternionHistory
+    from process_commands import ProcessCommands
+    from units import *
+    from ourlogging import setup_logging
 setup_logging(__file__)
 logger = logging.getLogger(__name__)
 
