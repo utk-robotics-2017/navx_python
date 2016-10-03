@@ -43,13 +43,13 @@ class I2C_IO:
     def stop(self):
         self.running = False
 
-    def isRunning(self):
+    def is_running(self):
         return self.running
 
     def run(self):
         # Initial Device Configuration
-        self.setUpdateRateHz(self.update_rate_hz)
-        if not self.getConfiguration():
+        self.set_update_rate_hz(self.update_rate_hz)
+        if not self.get_configuration():
             logger.warn("-- Did not get configuration data")
         else:
             logger.info("-- Board is %s (rev %s)", IMURegisters.model_type(self.board_id.type), self.board_id.hw_rev)
@@ -72,10 +72,10 @@ class I2C_IO:
         # IO Loop
         while self.running:
             if not self.board_state.update_rate_hz == self.update_rate_hz:
-                self.setUpdateRateHz(self.update_rate_hz)
+                self.set_update_rate_hz(self.update_rate_hz)
 
             try:
-                self.getCurrentData()
+                self.get_current_data()
             except IOError:
                 if log_error:
                     logger.exception("Error getting data")
@@ -84,7 +84,7 @@ class I2C_IO:
                 log_error = True
             time.sleep(update_rate)
 
-    def getConfiguration(self):
+    def get_configuration(self):
         success = False
         retry_count = 0
 
@@ -101,7 +101,7 @@ class I2C_IO:
                 board_id.fw_ver_major           = config[IMURegisters.NAVX_REG_FW_VER_MAJOR]
                 board_id.fw_ver_minor           = config[IMURegisters.NAVX_REG_FW_VER_MINOR]
                 board_id.type                   = config[IMURegisters.NAVX_REG_WHOAMI]
-                self.ahrs._setBoardID(board_id)
+                self.ahrs._set_board_id(board_id)
 
                 board_state = self.board_state
                 board_state.cal_status          = config[IMURegisters.NAVX_REG_CAL_STATUS]
@@ -112,17 +112,17 @@ class I2C_IO:
                 board_state.accel_fsr_g         = config[IMURegisters.NAVX_REG_ACCEL_FSR_G]
                 board_state.update_rate_hz      = config[IMURegisters.NAVX_REG_UPDATE_RATE_HZ]
                 board_state.capability_flags    = AHRSProtocol.decodeBinaryUint16(config, IMURegisters.NAVX_REG_CAPABILITY_FLAGS_L)
-                self.ahrs._setBoardState(board_state)
+                self.ahrs._set_board_state(board_state)
                 success = True
 
             retry_count += 1
 
         return success
 
-    def getCurrentData(self):
+    def get_current_data(self):
 
         first_address = IMURegisters.NAVX_REG_UPDATE_RATE_HZ
-        displacement_registers = self.ahrs._isDisplacementSupported()
+        displacement_registers = self.ahrs._is_displacement_supported()
 
         # If firmware supports displacement data, acquire it - otherwise implement
         # similar (but potentially less accurate) calculations on this processor.
@@ -169,9 +169,9 @@ class I2C_IO:
             ahrspos_update.disp_y      = AHRSProtocol.decodeProtocol1616Float(current_data, IMURegisters.NAVX_REG_DISP_Y_I_L - first_address)
             ahrspos_update.disp_z      = AHRSProtocol.decodeProtocol1616Float(current_data, IMURegisters.NAVX_REG_DISP_Z_I_L - first_address)
 
-            self.ahrs._setAHRSPosData(ahrspos_update, sensor_timestamp)
+            self.ahrs._set_ahrs_pos_data(ahrspos_update, sensor_timestamp)
         else:
-            self.ahrs._setAHRSData(ahrspos_update, sensor_timestamp)
+            self.ahrs._set_ahrs_data(ahrspos_update, sensor_timestamp)
 
         board_state = self.board_state
         board_state.cal_status      = current_data[IMURegisters.NAVX_REG_CAL_STATUS - first_address]
@@ -182,7 +182,7 @@ class I2C_IO:
         board_state.gyro_fsr_dps    = AHRSProtocol.decodeBinaryUint16(current_data, IMURegisters.NAVX_REG_GYRO_FSR_DPS_L)
         board_state.accel_fsr_g     = current_data[IMURegisters.NAVX_REG_ACCEL_FSR_G]
         board_state.capability_flags = AHRSProtocol.decodeBinaryUint16(current_data, IMURegisters.NAVX_REG_CAPABILITY_FLAGS_L - first_address)
-        self.ahrs._setBoardState(board_state)
+        self.ahrs._set_board_state(board_state)
 
         raw_data_update = self.raw_data_update
         raw_data_update.raw_gyro_x      = AHRSProtocol.decodeBinaryInt16(current_data, IMURegisters.NAVX_REG_GYRO_X_L - first_address)
@@ -195,29 +195,29 @@ class I2C_IO:
         raw_data_update.cal_mag_y       = AHRSProtocol.decodeBinaryInt16(current_data, IMURegisters.NAVX_REG_MAG_Y_L - first_address)
         raw_data_update.cal_mag_z       = AHRSProtocol.decodeBinaryInt16(current_data, IMURegisters.NAVX_REG_MAG_Z_L - first_address)
         raw_data_update.mpu_temp_c      = ahrspos_update.mpu_temp
-        self.ahrs._setRawData(raw_data_update, sensor_timestamp)
+        self.ahrs._set_raw_data(raw_data_update, sensor_timestamp)
 
         self.last_update_time = time.time()
         self.byte_count += len(current_data)
         self.update_count += 1
 
-    def isConnected(self):
+    def is_connected(self):
         time_since_last_update = time.time() - self.last_update_time
         return time_since_last_update <= self.IO_TIMEOUT_SECONDS
 
-    def getByteCount(self):
+    def get_byte_count(self):
         return self.byte_count
 
-    def getUpdateCount(self):
+    def get_update_count(self):
         return self.update_count
 
-    def setUpdateRateHz(self, update_rate_hz):
+    def set_update_rate_hz(self, update_rate_hz):
         self.write(IMURegisters.NAVX_REG_UPDATE_RATE_HZ, update_rate_hz)
 
-    def zeroYaw(self):
+    def zero_yaw(self):
         self.write(IMURegisters.NAVX_REG_INTEGRATION_CTL, AHRSProtocol.NAVX_INTEGRATION_CTL_RESET_YAW)
 
-    def zeroDisplacement(self):
+    def zero_displacement(self):
         self.write(IMURegisters.NAVX_REG_INTEGRATION_CTL,
                    (AHRSProtocol.NAVX_INTEGRATION_CTL_RESET_DISP_X |
                     AHRSProtocol.NAVX_INTEGRATION_CTL_RESET_DISP_Y |

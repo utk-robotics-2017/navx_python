@@ -3,6 +3,7 @@ import time
 
 from ahrs import AHRS
 from process_commands import ProcessCommands
+from units import *
 
 import logging
 from ourlogging import setup_logging
@@ -52,7 +53,7 @@ class NavX:
         if self.p.is_alive():
             self.p.terminate()
 
-    def getLastTimeStamp(self):
+    def get_last_time_stamp(self):
         '''
             Returns the last time stamp reported by the sensor.
 
@@ -64,7 +65,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getPitch(self):
+    def get_pitch(self):
         '''
             Returns the current pitch value (in degrees, from -180 to 180)
             reported by the sensor.  Pitch is a measure of rotation around
@@ -78,7 +79,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getRoll(self):
+    def get_roll(self):
         '''
             Returns the current roll value (in degrees, from -180 to 180)
             reported by the sensor.  Roll is a measure of rotation around
@@ -92,7 +93,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getYaw(self):
+    def get_yaw(self):
         '''
             Returns the current yaw value (in degrees, from -180 to 180)
             reported by the sensor.  Yaw is a measure of rotation around
@@ -100,7 +101,7 @@ class NavX:
 
             Note that the returned yaw value will be offset by a user-specified
             offset value; this user-specified offset value is set by
-            invoking the zeroYaw() method.
+            invoking the zero_yaw() method.
 
             :return The current yaw value in degrees (-180 to 180).
         '''
@@ -110,7 +111,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getCompassHeading(self):
+    def get_compass_heading(self):
         '''
             Returns the current tilt-compensated compass heading
             value (in degrees, from 0 to 360) reported by the sensor.
@@ -131,14 +132,14 @@ class NavX:
         self.lock.release()
         return response
 
-    def zeroYaw(self):
+    def zero_yaw(self):
         '''
             Sets the user-specified yaw offset to the current
             yaw value reported by the sensor.
 
             This user-specified yaw offset is automatically
             subtracted from subsequent yaw values reported by
-            the getYaw() method.
+            the get_yaw() method.
         '''
         self.lock.acquire()
         self.parent_conn.send(ProcessCommands.ZERO_YAW)
@@ -146,7 +147,7 @@ class NavX:
         assert response == "ok"
         self.lock.release()
 
-    def isCalibrating(self):
+    def is_calibrating(self):
         '''
             Returns true if the sensor is currently performing automatic
             gyro/accelerometer calibration.  Automatic calibration occurs
@@ -166,7 +167,7 @@ class NavX:
         self.parent_conn.send(ProcessCommands.IS_CALIBRATING)
         return self.parent_conn.recv()
 
-    def isConnected(self):
+    def is_connected(self):
         '''
             Indicates whether the sensor is currently connected
             to the host computer.  A connection is considered established
@@ -181,14 +182,14 @@ class NavX:
         self.lock.release()
         return response
 
-    def getByteCount(self):
+    def get_byte_count(self):
         '''
             Returns the count in bytes of data received from the
             sensor. This could can be useful for diagnosing
             connectivity issues.
 
             If the byte count is increasing, but the update count
-            (see :meth:`getUpdateCount`) is not, this indicates a software
+            (see :meth:`get_update_count`) is not, this indicates a software
             misconfiguration.
 
             :returns: The number of bytes received from the sensor.
@@ -199,7 +200,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getUpdateCount(self):
+    def get_update_count(self):
         '''
             Returns the count of valid updates which have
             been received from the sensor.  This count should increase
@@ -213,7 +214,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getWorldLinearAccelX(self):
+    def get_world_linear_accel_x(self):
         '''
             Returns the current linear acceleration in the X-axis (in G).
 
@@ -231,7 +232,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getWorldLinearAccelY(self):
+    def get_world_linear_accel_y(self):
         '''
             Returns the current linear acceleration in the Y-axis (in G).
 
@@ -249,7 +250,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getWorldLinearAccelZ(self):
+    def get_world_linear_accel_z(self):
         '''
             Returns the current linear acceleration in the Z-axis (in G).
 
@@ -267,7 +268,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def isMoving(self):
+    def is_moving(self):
         '''
             Indicates if the sensor is currently detecting motion,
             based upon the X and Y-axis world linear acceleration values.
@@ -282,7 +283,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def isRotating(self):
+    def is_rotating(self):
         '''
             Indicates if the sensor is currently detecting yaw rotation,
             based upon whether the change in yaw over the last second
@@ -306,7 +307,7 @@ class NavX:
             from the onboard pressure sensor.  This value is in units of millibar.
 
             NOTE:  This value is only valid for a navX Aero.  To determine
-            whether this value is valid, see isAltitudeValid().
+            whether this value is valid, see is_altitude_valid().
 
             :return Returns current barometric pressure (navX Aero only).
         '''
@@ -324,7 +325,7 @@ class NavX:
 
             NOTE:  This value is only valid sensors including a pressure
             sensor.  To determine whether this value is valid, see
-            isAltitudeValid().
+            is_altitude_valid().
 
             :return Returns current altitude in meters (as long as the sensor includes
             an installed on-board pressure sensor).
@@ -335,7 +336,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def isAltitudeValid(self):
+    def is_altitude_valid(self):
         '''
             Indicates whether the current altitude (and barometric pressure) data is
             valid. This value will only be true for a sensor with an onboard
@@ -352,7 +353,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getFusedHeading(self):
+    def get_fused_heading(self):
         '''
             Returns the "fused" (9-axis) heading.
 
@@ -375,14 +376,14 @@ class NavX:
         self.lock.release()
         return response
 
-    def isMagneticDisturbance(self):
+    def is_magnetic_disturbance(self):
         '''
             Indicates whether the current magnetic field strength diverges from the
             calibrated value for the earth's magnetic field by more than the currently-
             configured Magnetic Disturbance Ratio.
 
             This function will always return false if the sensor's magnetometer has
-            not yet been calibrated; see isMagnetometerCalibrated().
+            not yet been calibrated; see is_magnetometer_calibrated().
 
             :return true if a magnetic disturbance is detected (or the magnetometer is uncalibrated).
         '''
@@ -392,7 +393,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def isMagnetometerCalibrated(self):
+    def is_magnetometer_calibrated(self):
         '''
             Indicates whether the magnetometer has been calibrated.
 
@@ -412,7 +413,7 @@ class NavX:
 
     # Unit Quaternions
 
-    def getQuaternionW(self):
+    def get_quaternion_w(self):
         '''
             Returns the imaginary portion (W) of the Orientation Quaternion which
             fully describes the current sensor orientation with respect to the
@@ -432,7 +433,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getQuaternionX(self):
+    def get_quaternion_x(self):
         '''
             Returns the real portion (X axis) of the Orientation Quaternion which
             fully describes the current sensor orientation with respect to the
@@ -452,7 +453,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getQuaternionY(self):
+    def get_quaternion_y(self):
         '''
             Returns the real portion (X axis) of the Orientation Quaternion which
             fully describes the current sensor orientation with respect to the
@@ -474,7 +475,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getQuaternionZ(self):
+    def get_quaternion_z(self):
         '''
             Returns the real portion (X axis) of the Orientation Quaternion which
             fully describes the current sensor orientation with respect to the
@@ -496,7 +497,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def resetDisplacement(self):
+    def reset_displacement(self):
         '''
             Zeros the displacement integration variables.   Invoke this at the moment when
             integration begins.
@@ -507,7 +508,7 @@ class NavX:
         self.lock.release()
         assert response == "ok"
 
-    def getVelocityX(self):
+    def get_velocity_x(self):
         '''
             Returns the velocity (in meters/sec) of the X axis [Experimental].
 
@@ -522,7 +523,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getVelocityY(self):
+    def get_velocity_y(self):
         '''
             Returns the velocity (in meters/sec) of the Y axis [Experimental].
 
@@ -537,7 +538,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getVelocityZ(self):
+    def get_velocity_z(self):
         '''
             Returns the velocity (in meters/sec) of the Z axis [Experimental].
 
@@ -552,9 +553,9 @@ class NavX:
         self.lock.release()
         return response
 
-    def getDisplacementX(self):
+    def get_displacement_x(self):
         '''
-            Returns the displacement (in meters) of the X axis since resetDisplacement()
+            Returns the displacement (in meters) of the X axis since reset_displacement()
             was last invoked [Experimental].
 
             NOTE:  This feature is experimental.  Displacement measures rely on double-integration
@@ -569,9 +570,9 @@ class NavX:
         self.lock.release()
         return response
 
-    def getDisplacementY(self):
+    def get_displacement_y(self):
         '''
-            Returns the displacement (in meters) of the Y axis since resetDisplacement()
+            Returns the displacement (in meters) of the Y axis since reset_displacement()
             was last invoked [Experimental].
 
             NOTE:  This feature is experimental.  Displacement measures rely on double-integration
@@ -586,9 +587,9 @@ class NavX:
         self.lock.release()
         return response
 
-    def getDisplacementZ(self):
+    def get_displacement_z(self):
         '''
-            Returns the displacement (in meters) of the Z axis since resetDisplacement()
+            Returns the displacement (in meters) of the Z axis since reset_displacement()
             was last invoked [Experimental].
 
             NOTE:  This feature is experimental.  Displacement measures rely on double-integration
@@ -603,7 +604,7 @@ class NavX:
         self.lock.release()
         return response
 
-    def getTempC(self):
+    def get_temp(self):
         '''
             Returns the current temperature (in degrees centigrade) reported by
             the sensor's gyro/accelerometer circuit.
@@ -624,6 +625,7 @@ if __name__ == "__main__":
         time.sleep(1)
         while True:
             time.sleep(1)
-            print("Time: {}, Yaw: {}, Pitch: {}, Roll: {}".format(navx.getLastTimeStamp(),
-                                                                  navx.getYaw(), navx.getPitch(),
-                                                                  navx.getRoll()))
+            print("Time: {}, Yaw: {}, Pitch: {}, Roll: {}".format(navx.get_last_time_stamp().to(Time.s),
+                                                                  navx.get_yaw().to(Angle.degree),
+                                                                  navx.get_pitch().to(Angle.degree),
+                                                                  navx.get_roll().to(Angle.degree)))

@@ -6,6 +6,7 @@ from offset_tracker import OffsetTracker
 from inertial_data_integrator import InertialDataIntegrator
 from timestamped_quaternion_history import TimestampedQuaternionHistory
 from process_commands import ProcessCommands
+from units import *
 
 import time
 
@@ -62,9 +63,9 @@ class AHRS:
 
     def __init__(self, start_immediately=False, update_rate_hz=NAVX_DEFAULT_UPDATE_RATE_HZ):
         # Processed Data
-        self.yaw = 0.0
-        self.pitch = 0.0
-        self.roll = 0.0
+        self.yaw = 0
+        self.pitch = 0
+        self.roll = 0
         self.compass_heading = 0.0
         self.world_linear_accel_x = 0.0
         self.world_linear_accel_y = 0.0
@@ -79,10 +80,10 @@ class AHRS:
         # self.altitude_valid = False
         # self.is_magnetometer_calibrated = False
         # self.magnetic_disturbance = False
-        self.quaternionW = 0
-        self.quaternionX = 0
-        self.quaternionY = 0
-        self.quaternionZ = 0
+        self.quaternion_w = 0
+        self.quaternion_x = 0
+        self.quaternion_y = 0
+        self.quaternion_z = 0
 
         # Integrated Data
         self.vel_x = 0
@@ -160,73 +161,73 @@ class AHRS:
                 time.sleep(.01)
                 continue
             if cmd == ProcessCommands.TIME:
-                child_conn.send(self.getLastTimeStamp())
+                child_conn.send(self.get_last_time_stamp())
             elif cmd == ProcessCommands.YAW:
-                child_conn.send(self.getYaw())
+                child_conn.send(self.get_yaw())
             elif cmd == ProcessCommands.PITCH:
-                child_conn.send(self.getPitch())
+                child_conn.send(self.get_pitch())
             elif cmd == ProcessCommands.ROLL:
-                child_conn.send(self.getRoll())
+                child_conn.send(self.get_roll())
             elif cmd == ProcessCommands.COMPASS_HEADING:
-                child_conn.send(self.getCompassHeading())
+                child_conn.send(self.get_compass_heading())
             elif cmd == ProcessCommands.ZERO_YAW:
-                self.zeroYaw()
+                self.zero_yaw()
                 child_conn.send("ok")
             elif cmd == ProcessCommands.IS_CALIBRATING:
-                child_conn.send(self.isCalibrating())
+                child_conn.send(self.is_calibrating())
             elif cmd == ProcessCommands.IS_CONNECTED:
-                child_conn.send(self.isConnected())
+                child_conn.send(self.is_connected())
             elif cmd == ProcessCommands.BYTE_COUNT:
-                child_conn.send(self.getByteCount())
+                child_conn.send(self.get_byte_count())
             elif cmd == ProcessCommands.UPDATE_COUNT:
-                child_conn.send(self.getUpdateCount())
+                child_conn.send(self.get_update_count())
             elif cmd == ProcessCommands.WORLD_LINEAR_ACCEL_X:
-                child_conn.send(self.getWorldLinearAccelX())
+                child_conn.send(self.get_world_linear_accel_x())
             elif cmd == ProcessCommands.WORLD_LINEAR_ACCEL_Y:
-                child_conn.send(self.getWorldLinearAccelY())
+                child_conn.send(self.get_world_linear_accel_y())
             elif cmd == ProcessCommands.WORLD_LINEAR_ACCEL_Z:
-                child_conn.send(self.getWorldLinearAccelZ())
+                child_conn.send(self.get_world_linear_accel_z())
             elif cmd == ProcessCommands.BAROMETRIC_PRESSUE:
-                child_conn.send(self.getBarometricPressure())
+                child_conn.send(self.get_barometric_pressure())
             elif cmd == ProcessCommands.ALTITUDE:
-                child_conn.send(self.getAltitude())
+                child_conn.send(self.get_altitude())
             elif cmd == ProcessCommands.FUSED_HEADING:
-                child_conn.send(self.getFusedHeading())
+                child_conn.send(self.get_fused_heading())
             elif cmd == ProcessCommands.QUATERNION_W:
-                child_conn.send(self.getQuaternionW())
+                child_conn.send(self.get_quaternion_w())
             elif cmd == ProcessCommands.QUATERNION_X:
-                child_conn.send(self.getQuaternionX())
+                child_conn.send(self.get_quaternion_x())
             elif cmd == ProcessCommands.QUATERNION_Y:
-                child_conn.send(self.getQuaternionY())
+                child_conn.send(self.get_quaternion_y())
             elif cmd == ProcessCommands.QUATERNION_Z:
-                child_conn.send(self.getQuaternionZ())
+                child_conn.send(self.get_quaternion_z())
             elif cmd == ProcessCommands.RESET_DISPLACEMENT:
-                self.resetDisplacement()
+                self.reset_displacement()
                 child_conn.send("ok")
             elif cmd == ProcessCommands.VELOCITY_X:
-                child_conn.send(self.getVelocityX())
+                child_conn.send(self.get_velocity_x())
             elif cmd == ProcessCommands.VELOCITY_Y:
-                child_conn.send(self.getVelocityY())
+                child_conn.send(self.get_velocity_y())
             elif cmd == ProcessCommands.VELOCITY_Z:
-                child_conn.send(self.getVelocityZ())
+                child_conn.send(self.get_velocity_z())
             elif cmd == ProcessCommands.DISPLACEMENT_X:
-                child_conn.send(self.getDisplacementX())
+                child_conn.send(self.get_displacement_x())
             elif cmd == ProcessCommands.DISPLACEMENT_Y:
-                child_conn.send(self.getDisplacementY())
+                child_conn.send(self.get_displacement_y())
             elif cmd == ProcessCommands.DISPLACEMENT_Z:
-                child_conn.send(self.getDisplacementZ())
+                child_conn.send(self.get_displacement_z())
             elif cmd == ProcessCommands.TEMP_C:
                 child_conn.send(self.getTempC())
             elif cmd == ProcessCommands.IS_MOVING:
-                child_conn.send(self.isMoving())
+                child_conn.send(self.is_moving())
             elif cmd == ProcessCommands.IS_ROTATING:
-                child_conn.send(self.isRotating())
+                child_conn.send(self.is_rotating())
             elif cmd == ProcessCommands.ALTITUDE_VALID:
-                child_conn.send(self.isAltitudeValid())
+                child_conn.send(self.is_altitude_valid())
             elif cmd == ProcessCommands.IS_MAGNETOMETER_CALIBRATED:
-                child_conn.send(self.isMagnetometerCalibrated())
+                child_conn.send(self.is_magnetometer_calibrated())
             elif cmd == ProcessCommands.MAGNETIC_DISTURBANCE:
-                child_conn.send(self.isMagneticDisturbance())
+                child_conn.send(self.is_magnetic_disturbance())
             elif cmd == ProcessCommands.STOP:
                 self.stop()
                 break
@@ -239,11 +240,11 @@ class AHRS:
 
     # calculated properties
     @property
-    def is_moving(self):
+    def moving(self):
         return (self.sensor_status & AHRSProtocol.NAVX_SENSOR_STATUS_MOVING) != 0
 
     @property
-    def is_rotating(self):
+    def rotating(self):
         return (self.sensor_status & AHRSProtocol.NAVX_SENSOR_STATUS_YAW_STABLE) == 0
 
     @property
@@ -251,22 +252,22 @@ class AHRS:
         return (self.sensor_status & AHRSProtocol.NAVX_SENSOR_STATUS_ALTITUDE_VALID) != 0
 
     @property
-    def is_magnetometer_calibrated(self):
+    def magnetometer_calibrated(self):
         return (self.sensor_status & AHRSProtocol.NAVX_CAL_STATUS_MAG_CAL_COMPLETE) != 0
 
     @property
     def magnetic_disturbance(self):
         return (self.sensor_status & AHRSProtocol.NAVX_SENSOR_STATUS_MAG_DISTURBANCE) != 0
 
-    def getLastTimeStamp(self):
+    def get_last_time_stamp(self):
         '''
             Returns the last time stamp reported by the sensor
 
             :return The last time stamp
         '''
-        return self.last_sensor_timestamp
+        return Time(self.last_sensor_timestamp, Time.s)
 
-    def getPitch(self):
+    def get_pitch(self):
         '''
             Returns the current pitch value (in degrees, from -180 to 180)
             reported by the sensor.  Pitch is a measure of rotation around
@@ -274,9 +275,9 @@ class AHRS:
 
             :return The current pitch value in degrees (-180 to 180).
         '''
-        return self.pitch
+        return Angle(self.pitch, Angle.degree)
 
-    def getRoll(self):
+    def get_roll(self):
         '''
             Returns the current roll value (in degrees, from -180 to 180)
             reported by the sensor.  Roll is a measure of rotation around
@@ -284,9 +285,9 @@ class AHRS:
 
             :return The current roll value in degrees (-180 to 180).
         '''
-        return self.roll
+        return Angle(self.roll, Angle.degree)
 
-    def getYaw(self):
+    def get_yaw(self):
         '''
             Returns the current yaw value (in degrees, from -180 to 180)
             reported by the sensor.  Yaw is a measure of rotation around
@@ -294,17 +295,17 @@ class AHRS:
 
             Note that the returned yaw value will be offset by a user-specified
             offset value; this user-specified offset value is set by
-            invoking the zeroYaw() method.
+            invoking the zero_yaw() method.
 
             :return The current yaw value in degrees (-180 to 180).
         '''
-        if (self._isBoardYawResetSupported()):
-            return self.yaw
+        if (self._is_board_reset_supported()):
+            return Angle(self.yaw, Angle.degree)
         else:
-            yaw = self.yaw_offset_tracker.applyOffset(self.yaw)
-            return yaw
+            yaw = self.yaw_offset_tracker.apply_offset(self.yaw)
+            return Angle(yaw, Angle.degree)
 
-    def getCompassHeading(self):
+    def get_compass_heading(self):
         '''
             Returns the current tilt-compensated compass heading
             value (in degrees, from 0 to 360) reported by the sensor.
@@ -319,23 +320,23 @@ class AHRS:
             was generated.
             :return The current tilt-compensated compass heading, in degrees (0-360).
         '''
-        return self.compass_heading
+        return Angle(self.compass_heading, Angle.degree)
 
-    def zeroYaw(self):
+    def zero_yaw(self):
         '''
             Sets the user-specified yaw offset to the current
             yaw value reported by the sensor.
 
             This user-specified yaw offset is automatically
             subtracted from subsequent yaw values reported by
-            the getYaw() method.
+            the get_yaw() method.
         '''
-        if (self._isBoardYawResetSupported()):
-            self.io.zeroYaw()
+        if (self._is_board_reset_supported()):
+            self.io.zero_yaw()
         else:
             self.yaw_offset_tracker.setOffset()
 
-    def isCalibrating(self):
+    def is_calibrating(self):
         '''
             Returns true if the sensor is currently performing automatic
             gyro/accelerometer calibration.  Automatic calibration occurs
@@ -356,7 +357,7 @@ class AHRS:
                      AHRSProtocol.NAVX_CAL_STATUS_IMU_CAL_STATE_MASK) ==
                     AHRSProtocol.NAVX_CAL_STATUS_IMU_CAL_COMPLETE)
 
-    def isConnected(self):
+    def is_connected(self):
         '''
             Indicates whether the sensor is currently connected
             to the host computer.  A connection is considered established
@@ -365,23 +366,23 @@ class AHRS:
             :returns: Returns true if a valid update has been recently received
                   from the sensor.
         '''
-        return self.io.isConnected()
+        return self.io.is_connected()
 
-    def getByteCount(self):
+    def get_byte_count(self):
         '''
             Returns the count in bytes of data received from the
             sensor. This could can be useful for diagnosing
             connectivity issues.
 
             If the byte count is increasing, but the update count
-            (see :meth:`getUpdateCount`) is not, this indicates a software
+            (see :meth:`get_update_count`) is not, this indicates a software
             misconfiguration.
 
             :returns: The number of bytes received from the sensor.
         '''
-        return self.io.getByteCount()
+        return self.io.get_byte_count()
 
-    def getUpdateCount(self):
+    def get_update_count(self):
         '''
             Returns the count of valid updates which have
             been received from the sensor.  This count should increase
@@ -390,9 +391,9 @@ class AHRS:
             :returns: The number of valid updates received from the sensor.
         '''
 
-        return self.io.getUpdateCount()
+        return self.io.get_update_count()
 
-    def getWorldLinearAccelX(self):
+    def get_world_linear_accel_x(self):
         '''
             Returns the current linear acceleration in the X-axis (in G).
 
@@ -404,9 +405,9 @@ class AHRS:
 
             :return Current world linear acceleration in the X-axis (in G).
         '''
-        return self.world_linear_accel_x
+        return Acceleration(self.world_linear_accel_x, Acceleration.G)
 
-    def getWorldLinearAccelY(self):
+    def get_world_linear_accel_y(self):
         '''
             Returns the current linear acceleration in the Y-axis (in G).
 
@@ -418,9 +419,9 @@ class AHRS:
 
             :return Current world linear acceleration in the Y-axis (in G).
         '''
-        return self.world_linear_accel_y
+        return Acceleration(self.world_linear_accel_y, Acceleration.G)
 
-    def getWorldLinearAccelZ(self):
+    def get_world_linear_accel_z(self):
         '''
             Returns the current linear acceleration in the Z-axis (in G).
 
@@ -432,9 +433,9 @@ class AHRS:
 
             :return Current world linear acceleration in the Z-axis (in G).
         '''
-        return self.world_linear_accel_z
+        return Acceleration(self.world_linear_accel_z, Acceleration.G)
 
-    def isMoving(self):
+    def is_moving(self):
         '''
             Indicates if the sensor is currently detecting motion,
             based upon the X and Y-axis world linear acceleration values.
@@ -443,9 +444,9 @@ class AHRS:
 
             :return Returns true if the sensor is currently detecting motion.
         '''
-        return self.is_moving
+        return self.moving
 
-    def isRotating(self):
+    def is_rotating(self):
         '''
             Indicates if the sensor is currently detecting yaw rotation,
             based upon whether the change in yaw over the last second
@@ -457,21 +458,21 @@ class AHRS:
 
             :return Returns true if the sensor is currently detecting motion.
         '''
-        return self.is_rotating
+        return self.rotating
 
-    def getBarometricPressure(self):
+    def get_barometric_pressure(self):
         '''
             Returns the current barometric pressure, based upon calibrated readings
             from the onboard pressure sensor.  This value is in units of millibar.
 
             NOTE:  This value is only valid for a navX Aero.  To determine
-            whether this value is valid, see isAltitudeValid().
+            whether this value is valid, see is_altitude_valid().
 
             :return Returns current barometric pressure (navX Aero only).
         '''
-        return self.baro_pressure
+        return Pressure(self.baro_pressure, Pressure.mb)
 
-    def getAltitude(self):
+    def get_altitude(self):
         '''
             Returns the current altitude, based upon calibrated readings
             from a barometric pressure sensor, and the currently-configured
@@ -479,14 +480,14 @@ class AHRS:
 
             NOTE:  This value is only valid sensors including a pressure
             sensor.  To determine whether this value is valid, see
-            isAltitudeValid().
+            is_altitude_valid().
 
             :return Returns current altitude in meters (as long as the sensor includes
             an installed on-board pressure sensor).
         '''
-        return self.altitude
+        return Distance(self.altitude, Distance.m)
 
-    def isAltitudeValid(self):
+    def is_altitude_valid(self):
         '''
             Indicates whether the current altitude (and barometric pressure) data is
             valid. This value will only be true for a sensor with an onboard
@@ -499,7 +500,7 @@ class AHRS:
         '''
         return self.altitude_valid
 
-    def getFusedHeading(self):
+    def get_fused_heading(self):
         '''
             Returns the "fused" (9-axis) heading.
 
@@ -516,22 +517,22 @@ class AHRS:
 
             :return Fused Heading in Degrees (range 0-360)
         '''
-        return self.fused_heading
+        return Angle(self.fused_heading, Angle.degree)
 
-    def isMagneticDisturbance(self):
+    def is_magnetic_disturbance(self):
         '''
             Indicates whether the current magnetic field strength diverges from the
             calibrated value for the earth's magnetic field by more than the currently-
             configured Magnetic Disturbance Ratio.
 
             This function will always return false if the sensor's magnetometer has
-            not yet been calibrated; see isMagnetometerCalibrated().
+            not yet been calibrated; see is_magnetometer_calibrated().
 
             :return true if a magnetic disturbance is detected (or the magnetometer is uncalibrated).
         '''
         return self.magnetic_disturbance
 
-    def isMagnetometerCalibrated(self):
+    def is_magnetometer_calibrated(self):
         '''
             Indicates whether the magnetometer has been calibrated.
 
@@ -543,11 +544,11 @@ class AHRS:
 
             :return Returns true if magnetometer calibration has been performed.
         '''
-        return self.is_magnetometer_calibrated
+        return self.magnetometer_calibrated
 
     # Unit Quaternions
 
-    def getQuaternionW(self):
+    def get_quaternion_w(self):
         '''
             Returns the imaginary portion (W) of the Orientation Quaternion which
             fully describes the current sensor orientation with respect to the
@@ -561,9 +562,9 @@ class AHRS:
             <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>definition</a>.
             :return Returns the imaginary portion (W) of the quaternion.
         '''
-        return self.quaternionW / 16384.0
+        return Angle(self.quaternion_w / 16384.0, Angle.Q)
 
-    def getQuaternionX(self):
+    def get_quaternion_x(self):
         '''
             Returns the real portion (X axis) of the Orientation Quaternion which
             fully describes the current sensor orientation with respect to the
@@ -577,9 +578,9 @@ class AHRS:
             <a href=https://en.wikipedia.org/wiki/Quaternions_and_spatial_rotation>description</a>.
             :return Returns the real portion (X) of the quaternion.
         '''
-        return self.quaternionX / 16384.0
+        return Angle(self.quaternion_x / 16384.0, Angle.Q)
 
-    def getQuaternionY(self):
+    def get_quaternion_y(self):
         '''
             Returns the real portion (X axis) of the Orientation Quaternion which
             fully describes the current sensor orientation with respect to the
@@ -595,9 +596,9 @@ class AHRS:
 
             :return Returns the real portion (X) of the quaternion.
         '''
-        return self.quaternionY / 16384.0
+        return Angle(self.quaternion_y / 16384.0, Angle.Q)
 
-    def getQuaternionZ(self):
+    def get_quaternion_z(self):
         '''
             Returns the real portion (X axis) of the Orientation Quaternion which
             fully describes the current sensor orientation with respect to the
@@ -613,19 +614,19 @@ class AHRS:
 
             :return Returns the real portion (X) of the quaternion.
         '''
-        return self.quaternionZ / 16384.0
+        return Angle(self.quaternion_z / 16384.0, Angle.Q)
 
-    def resetDisplacement(self):
+    def reset_displacement(self):
         '''
             Zeros the displacement integration variables.   Invoke this at the moment when
             integration begins.
         '''
-        if (self._isDisplacementSupported()):
-            self.io.zeroDisplacement()
+        if (self._is_displacement_supported()):
+            self.io.zero_displacement()
         else:
-            self.integrator.resetDisplacement()
+            self.integrator.reset_displacement()
 
-    def updateDisplacement(self, accel_x_g, accel_y_g, update_rate_hz, is_moving):
+    def update_displacement(self, accel_x_g, accel_y_g, update_rate_hz, is_moving):
         '''
             Each time new linear acceleration samples are received, this function should be invoked.
             This function transforms acceleration in G to meters/sec^2, then converts this value to
@@ -633,53 +634,53 @@ class AHRS:
             is converted to displacement in meters, and integrated.
             :return none.
         '''
-        self.integrator.updateDisplacement(accel_x_g, accel_y_g, update_rate_hz, is_moving)
+        self.integrator.update_displacement(accel_x_g, accel_y_g, update_rate_hz, is_moving)
 
-    def getVelocityX(self):
+    def get_velocity_x(self):
         '''
             Returns the velocity (in meters/sec) of the X axis [Experimental].
 
             NOTE:  This feature is experimental.  Velocity measures rely on integration
             of acceleration values from MEMS accelerometers which yield "noisy" values.  The
             resulting velocities are not known to be very accurate.
-            :return Current Velocity (in meters/squared).
+            :return Current Velocity (in meters/sec).
         '''
-        if self._isDisplacementSupported():
-            return self.vel_x
+        if self._is_displacement_supported():
+            return Velocity(self.vel_x, Velocity.m_s)
         else:
-            return self.integrator.getVelocityX()
+            return Velocity(self.integrator.get_velocity_x(), Velocity.m_s)
 
-    def getVelocityY(self):
+    def get_velocity_y(self):
         '''
             Returns the velocity (in meters/sec) of the Y axis [Experimental].
 
             NOTE:  This feature is experimental.  Velocity measures rely on integration
             of acceleration values from MEMS accelerometers which yield "noisy" values.  The
             resulting velocities are not known to be very accurate.
-            :return Current Velocity (in meters/squared).
+            :return Current Velocity (in meters/sec).
         '''
-        if self._isDisplacementSupported():
-            return self.vel_y
+        if self._is_displacement_supported():
+            return Velocity(self.vel_y, Velocity.m_s)
         else:
-            return self.integrator.getVelocityY()
+            return Velocity(self.integrator.get_velocity_y(), Velocity.m_s)
 
-    def getVelocityZ(self):
+    def get_velocity_z(self):
         '''
             Returns the velocity (in meters/sec) of the Z axis [Experimental].
 
             NOTE:  This feature is experimental.  Velocity measures rely on integration
             of acceleration values from MEMS accelerometers which yield "noisy" values.  The
             resulting velocities are not known to be very accurate.
-            :return Current Velocity (in meters/squared).
+            :return Current Velocity (in meters/sec).
         '''
-        if self._isDisplacementSupported():
-            return self.vel_z
+        if self._is_displacement_supported():
+            return Velocity(self.vel_z, Velocity.m_s)
         else:
-            return self.integrator.getVelocityZ()
+            return Velocity(self.integrator.get_velocity_z(), Velocity.m_s)
 
-    def getDisplacementX(self):
+    def get_displacement_x(self):
         '''
-            Returns the displacement (in meters) of the X axis since resetDisplacement()
+            Returns the displacement (in meters) of the X axis since reset_displacement()
             was last invoked [Experimental].
 
             NOTE:  This feature is experimental.  Displacement measures rely on double-integration
@@ -688,14 +689,14 @@ class AHRS:
             increases quickly as time progresses.
             :return Displacement since last reset (in meters).
         '''
-        if self._isDisplacementSupported():
-            return self.disp_x
+        if self._is_displacement_supported():
+            return Distance(self.disp_x, Distance.m)
         else:
-            return self.integrator.getDisplacementX()
+            return Distance(self.integrator.get_displacement_x(), Distance.m)
 
-    def getDisplacementY(self):
+    def get_displacement_y(self):
         '''
-            Returns the displacement (in meters) of the Y axis since resetDisplacement()
+            Returns the displacement (in meters) of the Y axis since reset_displacement()
             was last invoked [Experimental].
 
             NOTE:  This feature is experimental.  Displacement measures rely on double-integration
@@ -704,14 +705,14 @@ class AHRS:
             increases quickly as time progresses.
             :return Displacement since last reset (in meters).
         '''
-        if self._isDisplacementSupported():
-            return self.disp_y
+        if self._is_displacement_supported():
+            return Distance(self.disp_y, Distance.m)
         else:
-            return self.integrator.getDisplacementY()
+            return Distance(self.integrator.get_displacement_y(), Distance.m)
 
-    def getDisplacementZ(self):
+    def get_displacement_z(self):
         '''
-            Returns the displacement (in meters) of the Z axis since resetDisplacement()
+            Returns the displacement (in meters) of the Z axis since reset_displacement()
             was last invoked [Experimental].
 
             NOTE:  This feature is experimental.  Displacement measures rely on double-integration
@@ -720,12 +721,12 @@ class AHRS:
             increases quickly as time progresses.
             :return Displacement since last reset (in meters).
         '''
-        if self._isDisplacementSupported():
-            return self.disp_z
+        if self._is_displacement_supported():
+            return Distance(self.disp_z, Distance.m)
         else:
-            return self.integrator.getDisplacementZ()
+            return Distance(self.integrator.get_displacement_z(), Distance.m)
 
-    def getTempC(self):
+    def get_temp(self):
         '''
             Returns the current temperature (in degrees centigrade) reported by
             the sensor's gyro/accelerometer circuit.
@@ -735,9 +736,9 @@ class AHRS:
 
             :return The current temperature (in degrees centigrade).
         '''
-        return self.mpu_temp_c
+        return Temperature(self.mpu_temp_c, Temperature.C)
 
-    def getBoardYawAxis(self):
+    def get_board_yaw_axis(self):
         '''
             Returns information regarding which sensor board axis (X,Y or Z) and
             direction (up/down) is currently configured to report Yaw (Z) angle
@@ -768,7 +769,7 @@ class AHRS:
 
         return up, yaw_axis
 
-    def getFirmwareVersion(self):
+    def get_firmware_version(self):
         '''
             Returns the version number of the firmware currently executing
             on the sensor.
@@ -781,83 +782,83 @@ class AHRS:
         '''
         return '%s.%s' % (self.fw_ver_major, self.fw_ver_minor)
 
-    def getQuaternionAtTime(self, requested_timestamp):
+    def get_quaternion_at_time(self, requested_timestamp):
         return self.quaternion_history.get(requested_timestamp)
 
-    def getYawAtTime(self, requested_timestamp):
+    def get_yaw_at_time(self, requested_timestamp):
         match = self.quaternion_history.get(requested_timestamp)
         if match is not None:
-            return match.getYaw()
+            return match.get_yaw()
         return 0.0
 
-    def getPitchAtTime(self, requested_timestamp):
+    def get_pitch_at_time(self, requested_timestamp):
         match = self.quaternion_history.get(requested_timestamp)
         if match is not None:
-            return match.getPitch()
+            return match.get_pitch()
         return 0.0
 
-    def getRollAtTime(self, requested_timestamp):
+    def get_roll_at_time(self, requested_timestamp):
         match = self.quaternion_history.get(requested_timestamp)
         if match is not None:
-            return match.getRoll()
+            return match.get_roll()
         return 0.0
 
     # Internal API
 
-    def _isOmniMountSupported(self):
+    def _is_omni_mount_supported(self):
         return ((self.capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_OMNIMOUNT) != 0)
 
-    def _isBoardYawResetSupported(self):
+    def _is_board_reset_supported(self):
         return ((self.capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_YAW_RESET) != 0)
 
-    def _isDisplacementSupported(self):
+    def _is_displacement_supported(self):
         return ((self.capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_VEL_AND_DISP) != 0)
 
-    def _isAHRSPosTimestampSupported(self):
+    def _is_ahrs_pos_time_stamp_supported(self):
         return ((self.capability_flags & AHRSProtocol.NAVX_CAPABILITY_FLAG_AHRSPOS_TS) != 0)
 
-    def _setYawPitchRoll(self, o):
+    def _set_yaw_pitch_roll(self, o):
         self.lock.acquire()
         self.__dict__.update(o.__dict__)
         self.lock.release()
 
-    def _setAHRSPosData(self, o, ts):
+    def _set_ahrs_pos_data(self, o, ts):
         self.lock.acquire()
         self.__dict__.update(o.__dict__)
         self.last_sensor_timestamp = ts
         if self.quaternion_history is not None:
-            self.quaternion_history.add(self.quaternionW, self.quaternionX, self.quaternionY,
-                                        self.quaternionZ, self.last_sensor_timestamp)
+            self.quaternion_history.add(self.quaternion_w, self.quaternion_x, self.quaternion_y,
+                                        self.quaternion_z, self.last_sensor_timestamp)
 
-        self.yaw_offset_tracker.updateHistory(self.yaw)
-        self.yaw_angle_tracker.nextAngle(self.getYaw())
+        self.yaw_offset_tracker.update_history(self.yaw)
+        self.yaw_angle_tracker.next_angle(self.get_yaw())
         self.lock.release()
 
-    def _setRawData(self, o, ts):
+    def _set_raw_data(self, o, ts):
         self.lock.acquire()
         self.__dict__.update(o.__dict__)
         self.last_sensor_timestamp = ts
         self.lock.release()
 
-    def _setAHRSData(self, o, ts):
+    def _set_ahrs_data(self, o, ts):
         self.lock.acquire()
         self.__dict__.update(o.__dict__)
         self.last_sensor_timestamp = ts
         if self.quaternion_history is not None:
-            self.quaternion_history.add(self.quaternionW, self.quaternionX, self.quaternionY,
-                                        self.quaternionZ, self.last_sensor_timestamp)
+            self.quaternion_history.add(self.quaternion_w, self.quaternion_x, self.quaternion_y,
+                                        self.quaternion_z, self.last_sensor_timestamp)
 
-        self.yaw_offset_tracker.updateHistory(self.yaw)
-        self._updateDisplacement(o.world_linear_accel_x, o.world_linear_accel_y, self.update_rate_hz, self.is_moving)
-        self.yaw_angle_tracker.nextAngle(self.getYaw())
+        self.yaw_offset_tracker.update_history(self.yaw)
+        self._update_displacement(o.world_linear_accel_x, o.world_linear_accel_y, self.update_rate_hz, self.moving)
+        self.yaw_angle_tracker.next_angle(self.get_yaw())
         self.lock.acquire()
 
-    def _setBoardID(self, o):
+    def _set_board_id(self, o):
         self.lock.acquire()
         self.__dict__.update(o.__dict__)
         self.lock.release()
 
-    def _setBoardState(self, o):
+    def _set_board_state(self, o):
         self.lock.acquire()
         self.__dict__.update(o.__dict__)
         self.lock.release()
@@ -867,6 +868,6 @@ if __name__ == "__main__":
         time.sleep(1)
         while True:
             time.sleep(1)
-            print("Time: {}, Yaw: {}, Pitch: {}, Roll: {}".format(navx.getLastTimeStamp(),
-                                                                  navx.getYaw(), navx.getPitch(),
-                                                                  navx.getRoll()))
+            print("Time: {}, Yaw: {}, Pitch: {}, Roll: {}".format(navx.get_last_time_stamp().to(Time.s),
+                                                                  navx.get_yaw().to(Angle.degree), navx.get_pitch().to(Angle.degree),
+                                                                  navx.get_roll().to(Angle.degree)))

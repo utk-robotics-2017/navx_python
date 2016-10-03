@@ -6,19 +6,19 @@ class OffsetTracker:
         self.value_history = deque([0] * history_length, maxlen=history_length)
         self.value_offset = 0
 
-    def updateHistory(self, value):
+    def update_history(self, value):
         self.value_history.append(value)
 
-    def getAverageFromHistory(self):
+    def get_average_from_history(self):
         return sum(self.value_history) / float(len(self.value_history))
 
-    def setOffset(self):
-        self.value_offset = self.getAverageFromHistory()
+    def set_offset(self):
+        self.value_offset = self.get_average_from_history()
 
-    def getOffset(self):
+    def get_offset(self):
         return self.value_offset
 
-    def applyOffset(self, value):
+    def apply_offset(self, value):
         offseted_value = (value - self.value_offset)
         if offseted_value < -180:
             offseted_value += 360

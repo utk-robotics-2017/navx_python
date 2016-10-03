@@ -33,7 +33,7 @@ class ProcessCommands:
     DISPLACEMENT_X = 'dx'
     DISPLACEMENT_Y = 'dy'
     DISPLACEMENT_Z = 'dz'
-    TEMP_C = 'tc'
+    TEMP = 't'
 
     STOP = 's'
     FREE = 'f'
