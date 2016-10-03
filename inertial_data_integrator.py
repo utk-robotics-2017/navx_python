@@ -1,8 +1,8 @@
 class InertialDataIntegrator:
     def __init__(self):
-        self.resetDisplacement()
+        self.reset_displacement()
 
-    def updateDisplacement(self, accel_x_g, accel_y_g, update_rate_hz, is_moving):
+    def update_displacement(self, accel_x_g, accel_y_g, update_rate_hz, is_moving):
         if (is_moving):
             accel_g = [accel_x_g, accel_y_g]
             sample_time = (1.0 / update_rate_hz)
@@ -15,24 +15,24 @@ class InertialDataIntegrator:
             self.last_velocity[0] = 0.0
             self.last_velocity[1] = 0.0
 
-    def resetDisplacement(self):
+    def reset_displacement(self):
         self.displacement = [0, 0]
         self.last_velocity = [0, 0]
 
-    def getVelocityX(self):
+    def get_velocity_x(self):
         return self.last_velocity[0]
 
-    def getVelocityY(self):
+    def get_velocity_y(self):
         return self.last_velocity[1]
 
-    def getVelocityZ(self):
+    def get_velocity_z(self):
         return 0
 
-    def getDisplacementX(self):
+    def get_displacement_x(self):
         return self.displacement[0]
 
-    def getDisplacementY(self):
+    def get_displacement_y(self):
         return self.displacement[1]
 
-    def getDisplacementZ(self):
+    def get_displacement_z(self):
         return 0
